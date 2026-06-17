@@ -1,5 +1,6 @@
 #include "NetworkManager.h"
 #include <time.h>
+#include <WiFiClientSecure.h>
 
 NetworkManager::NetworkManager(const char* ssid, const char* password, const char* apiUrl)
     : _ssid(ssid), _password(password), _apiUrl(apiUrl),
@@ -167,7 +168,16 @@ void NetworkManager::flushBuffer() {
 
 bool NetworkManager::uploadPayload(const String& jsonPayload) {
     HTTPClient http;
-    http.begin(_apiUrl);
+    
+    // Use secure client for HTTPS (Vercel) endpoints
+    String urlStr = String(_apiUrl);
+    if (urlStr.startsWith("https://")) {
+        WiFiClientSecure *secureClient = new WiFiClientSecure;
+        secureClient->setInsecure(); // Skip CA cert validation (acceptable for IoT)
+        http.begin(*secureClient, _apiUrl);
+    } else {
+        http.begin(_apiUrl);
+    }
     http.addHeader("Content-Type", "application/json");
     http.setTimeout(HTTP_TIMEOUT_MS);
     

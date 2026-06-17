@@ -30,7 +30,8 @@
 #define WIFI_PASSWORD "Man2001@"
 
 // Next.js Server API Telemetry Ingestion Endpoint
-#define BACKEND_API_URL "http://192.168.1.100:3000/api/telemetry"
+// Live Vercel Deployment (Production Cloud)
+#define BACKEND_API_URL "https://voltguard-beta.vercel.app/api/telemetry"
 
 // Network timeouts
 #define HTTP_TIMEOUT_MS 5000
