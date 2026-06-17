@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiMulti.h>
 #include <HTTPClient.h>
 #include "PZEM_Manager.h"
 #include "FaultDetector.h"
@@ -43,6 +44,7 @@ private:
     const char* _password;
     const char* _apiUrl;
     
+    WiFiMulti wifiMulti;
     bool _wifiConnected;
     unsigned long _lastWifiCheck;
     

@@ -27,6 +27,22 @@ export async function POST(request) {
     // 1. Convert timestamp to Date object
     const telemetryDate = timestamp ? new Date(timestamp * 1000) : new Date();
 
+    // 1.5 Ensure Device exists in DB so Threshold upsert doesn't fail on foreign key
+    const initialStatus = relayTripped ? 'FAULT' : 'ONLINE';
+    await prisma.device.upsert({
+      where: { id: deviceId },
+      update: {
+        name: deviceName || undefined,
+        location: location || undefined,
+      },
+      create: {
+        id: deviceId,
+        name: deviceName || 'Unknown Device',
+        location: location || 'Unknown Location',
+        status: initialStatus,
+      },
+    });
+
     // 2. Establish baseline thresholds (upsert default first if not present)
     const threshold = await prisma.threshold.upsert({
       where: { deviceId },
@@ -159,21 +175,15 @@ export async function POST(request) {
       }
     }
 
-    // 4. Update or Create Device status
+    // 4. Update Device status and metadata
     const deviceStatus = (hasActiveFault || relayTripped) ? 'FAULT' : 'ONLINE';
-    await prisma.device.upsert({
+    await prisma.device.update({
       where: { id: deviceId },
-      update: {
-        name: deviceName,
-        location,
+      data: {
+        name: deviceName || undefined,
+        location: location || undefined,
         status: deviceStatus,
         updatedAt: new Date(),
-      },
-      create: {
-        id: deviceId,
-        name: deviceName,
-        location,
-        status: deviceStatus,
       },
     });
 

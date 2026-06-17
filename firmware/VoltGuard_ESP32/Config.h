@@ -29,6 +29,22 @@
 #define WIFI_SSID "DarkDev"
 #define WIFI_PASSWORD "Man2001@"
 
+// Structure for multiple Wi-Fi networks configuration
+struct WiFiCredential {
+    const char* ssid;
+    const char* password;
+};
+
+// Define multiple Wi-Fi credentials. The firmware will scan and connect to the strongest available AP.
+// Feel free to add as many APs as you need here!
+static const WiFiCredential WIFI_NETWORKS[] = {
+    {"DarkDev", "Man2001@"},
+    {"SmartPoultryWiFi", "poultry123"},
+    {"HomeNet", "home1234"},
+    {"VoltGuard_Test", "TestPassword123"}
+};
+static const int WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWORKS[0]);
+
 // Next.js Server API Telemetry Ingestion Endpoint
 // Live Vercel Deployment (Production Cloud)
 #define BACKEND_API_URL "https://voltguard-beta.vercel.app/api/telemetry"

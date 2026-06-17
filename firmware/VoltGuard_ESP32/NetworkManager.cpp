@@ -12,30 +12,70 @@ void NetworkManager::begin() {
     pinMode(LED_WIFI_PIN, OUTPUT);
     digitalWrite(LED_WIFI_PIN, LOW); // Off initially
 
-    Serial.println("[Network] Connecting to Wi-Fi...");
-    WiFi.begin(_ssid, _password);
+    Serial.println("[Network] Initializing Wi-Fi connection...");
+    
+    // Set Wi-Fi to station mode
+    WiFi.mode(WIFI_STA);
+
+    // 1. Add the primary AP passed via constructor
+    if (_ssid && strlen(_ssid) > 0) {
+        wifiMulti.addAP(_ssid, _password);
+        Serial.printf("[Network] Registered primary Wi-Fi AP: %s\n", _ssid);
+    }
+
+    // 2. Add additional fallback APs from Config.h
+    for (int i = 0; i < WIFI_NETWORK_COUNT; i++) {
+        // Avoid adding the primary one twice
+        if (_ssid && strcmp(WIFI_NETWORKS[i].ssid, _ssid) == 0) {
+            continue;
+        }
+        wifiMulti.addAP(WIFI_NETWORKS[i].ssid, WIFI_NETWORKS[i].password);
+        Serial.printf("[Network] Registered fallback Wi-Fi AP: %s\n", WIFI_NETWORKS[i].ssid);
+    }
+
+    Serial.println("[Network] Scanning and connecting to best available network...");
+    wl_status_t status = wifiMulti.run();
+    if (status == WL_CONNECTED) {
+        _wifiConnected = true;
+        digitalWrite(LED_WIFI_PIN, HIGH);
+        Serial.printf("[Network] Wi-Fi Connected! SSID: %s, IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+        syncTime();
+    } else {
+        Serial.println("[Network] Wi-Fi connection pending. Will retry in background.");
+    }
+    
     _lastWifiCheck = millis();
 }
 
 void NetworkManager::handleConnection() {
     unsigned long now = millis();
     
-    // Check Wi-Fi Status
+    // Check current connection status
     if (WiFi.status() == WL_CONNECTED) {
         if (!_wifiConnected) {
             _wifiConnected = true;
             digitalWrite(LED_WIFI_PIN, HIGH); // Steady ON when connected
-            Serial.printf("[Network] Wi-Fi Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+            Serial.printf("[Network] Wi-Fi Connected! SSID: %s, IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
             syncTime();
             flushBuffer(); // Flush offline data
         }
     } else {
+        // If disconnected, trigger connection update using wifiMulti.run()
         if (_wifiConnected || (now - _lastWifiCheck > WIFI_RECONNECT_INTERVAL_MS)) {
             _wifiConnected = false;
             digitalWrite(LED_WIFI_PIN, LOW); // LED OFF
-            Serial.println("[Network] Wi-Fi disconnected or connection lost. Retrying...");
-            WiFi.disconnect();
-            WiFi.begin(_ssid, _password);
+            Serial.println("[Network] Wi-Fi disconnected or connection lost. Re-scanning & connecting...");
+            
+            wl_status_t status = wifiMulti.run();
+            if (status == WL_CONNECTED) {
+                _wifiConnected = true;
+                digitalWrite(LED_WIFI_PIN, HIGH);
+                Serial.printf("[Network] Reconnected to SSID: %s, IP: %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+                syncTime();
+                flushBuffer();
+            } else {
+                Serial.println("[Network] Connection attempt unsuccessful. Will retry later.");
+            }
             _lastWifiCheck = now;
         }
     }
