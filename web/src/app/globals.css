@@ -1,0 +1,288 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ==========================================================
+   VoltGuard Custom Design System Tokens (Dark Industrial Theme)
+   ========================================================== */
+:root {
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Color Palette - HSL Tailored */
+  --bg-main: hsl(222, 28%, 7%);
+  --bg-card: hsla(222, 28%, 12%, 0.75);
+  --bg-input: hsl(222, 28%, 15%);
+  --border-glow: hsla(217, 90%, 60%, 0.15);
+  --border-muted: hsla(222, 20%, 25%, 0.4);
+  
+  --text-primary: hsl(210, 40%, 98%);
+  --text-secondary: hsl(215, 20%, 75%);
+  --text-muted: hsl(215, 12%, 55%);
+  
+  /* Status Colors */
+  --color-cyan: hsl(186, 100%, 48%);
+  --color-cyan-glow: hsla(186, 100%, 48%, 0.25);
+  --color-green: hsl(145, 80%, 45%);
+  --color-green-glow: hsla(145, 80%, 45%, 0.25);
+  --color-amber: hsl(38, 92%, 50%);
+  --color-amber-glow: hsla(38, 92%, 50%, 0.25);
+  --color-red: hsl(355, 85%, 52%);
+  --color-red-glow: hsla(355, 85%, 52%, 0.25);
+  --color-blue: hsl(217, 91%, 60%);
+  --color-blue-glow: hsla(217, 91%, 60%, 0.25);
+
+  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 20px -4px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 15px 1px var(--color-cyan-glow);
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+/* ==========================================================
+   Base Reset & Layouts
+   ========================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-muted) transparent;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(217, 90%, 20%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(186, 100%, 20%, 0.05) 0px, transparent 50%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select {
+  font-family: inherit;
+}
+
+/* ==========================================================
+   Glassmorphism & Card Utilities
+   ========================================================== */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-panel:hover {
+  border-color: var(--border-glow);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px -2px var(--color-cyan-glow);
+  border-color: hsla(186, 100%, 48%, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px -2px var(--color-red-glow);
+  border-color: hsla(355, 85%, 52%, 0.3);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px -2px var(--color-amber-glow);
+  border-color: hsla(38, 92%, 50%, 0.3);
+}
+
+/* ==========================================================
+   Micro-animations
+   ========================================================== */
+@keyframes pulse-cyan {
+  0%, 100% { box-shadow: 0 0 8px 1px var(--color-cyan-glow); }
+  50% { box-shadow: 0 0 18px 4px var(--color-cyan-glow); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 8px 1px var(--color-red-glow); }
+  50% { box-shadow: 0 0 18px 4px var(--color-red-glow); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.pulse-active-cyan {
+  animation: pulse-cyan 2s infinite ease-in-out;
+}
+
+.pulse-active-red {
+  animation: pulse-red 1.5s infinite ease-in-out;
+}
+
+.animate-glow {
+  animation: pulse-glow 2.5s infinite ease-in-out;
+}
+
+/* ==========================================================
+   Custom UI Elements
+   ========================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+
+.badge-online {
+  background: var(--color-cyan-glow);
+  color: var(--color-cyan);
+  border: 1px solid hsla(186, 100%, 48%, 0.2);
+}
+
+.badge-fault {
+  background: var(--color-red-glow);
+  color: var(--color-red);
+  border: 1px solid hsla(355, 85%, 52%, 0.2);
+}
+
+.badge-offline {
+  background: var(--border-muted);
+  color: var(--text-muted);
+  border: 1px solid hsla(222, 10%, 40%, 0.2);
+}
+
+.badge-warning {
+  background: var(--color-amber-glow);
+  color: var(--color-amber);
+  border: 1px solid hsla(38, 92%, 50%, 0.2);
+}
+
+/* Inputs & Form styling */
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-input:focus {
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 8px 0 var(--color-cyan-glow);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.btn-primary {
+  background: var(--color-blue);
+  color: var(--text-primary);
+  box-shadow: 0 4px 14px -4px var(--color-blue-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: hsl(217, 91%, 65%);
+  box-shadow: 0 4px 20px -2px var(--color-blue-glow);
+  transform: translateY(-1px);
+}
+
+.btn-cyan {
+  background: var(--color-cyan);
+  color: hsl(222, 28%, 7%);
+  font-weight: 600;
+  box-shadow: 0 4px 14px -4px var(--color-cyan-glow);
+}
+
+.btn-cyan:hover:not(:disabled) {
+  background: hsl(186, 100%, 55%);
+  box-shadow: 0 4px 20px -2px var(--color-cyan-glow);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-muted);
+  color: var(--text-secondary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--border-glow);
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Standard table styling */
+.custom-table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.custom-table th {
+  padding: 14px 16px;
+  border-bottom: 2px solid var(--border-muted);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.custom-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-muted);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.custom-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Utility for monospace numbers */
+.mono-num {
+  font-family: var(--font-mono);
+}

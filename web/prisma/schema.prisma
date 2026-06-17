@@ -1,0 +1,72 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("OPERATOR") // ADMIN, OPERATOR
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Device {
+  id          String        @id // Matches unique DEVICE_ID (e.g. "DEV_VOLTGUARD_001")
+  name        String
+  location    String
+  status      String        @default("OFFLINE") // ONLINE, OFFLINE, FAULT
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  threshold   Threshold?
+  telemetries Telemetry[]
+  alarms      Alarm[]
+}
+
+model Threshold {
+  id         Int      @id @default(autoincrement())
+  deviceId   String   @unique
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  minVoltage Float    @default(195.0)
+  maxVoltage Float    @default(253.0)
+  maxCurrent Float    @default(15.0)
+  maxPower   Float    @default(3300.0)
+  minPF      Float    @default(0.80)
+  maxEnergy  Float    @default(10000.0)
+  updatedAt  DateTime @updatedAt
+}
+
+model Telemetry {
+  id           Int      @id @default(autoincrement())
+  deviceId     String
+  device       Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  voltage      Float
+  current      Float
+  power        Float
+  energy       Float
+  frequency    Float
+  pf           Float
+  relayTripped Boolean
+  timestamp    DateTime @default(now())
+
+  @@index([deviceId, timestamp])
+}
+
+model Alarm {
+  id         Int       @id @default(autoincrement())
+  deviceId   String
+  device     Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  type       String    // UNDERVOLTAGE, OVERVOLTAGE, OVERCURRENT, OVERLOAD, LOW_POWER_FACTOR, SHORT_CIRCUIT
+  value      Float
+  threshold  Float
+  status     String    @default("ACTIVE") // ACTIVE, ACKNOWLEDGED, RESOLVED
+  timestamp  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([deviceId, status])
+}
