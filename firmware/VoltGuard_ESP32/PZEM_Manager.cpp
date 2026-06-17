@@ -14,61 +14,67 @@ PZEM_Manager::PZEM_Manager(int rxPin, int txPin)
         _pzems[i] = nullptr;
 #endif
     }
-#if !SIMULATE_PZEM
-    _pzemSerial = nullptr;
-#endif
 }
 
 void PZEM_Manager::begin() {
     _lastReadTime = millis();
 #if !SIMULATE_PZEM
-    // Initialize Hardware Serial 2 ONCE for the entire Modbus bus
-    // IMPORTANT: We call begin() here and never again. The 4-argument PZEM constructor
-    // also calls serial.begin() internally which destroys the bus — so we must use
-    // the 2-argument constructor (HardwareSerial&, addr) for all subsequent instantiation.
-    Serial2.begin(9600, SERIAL_8N1, _rxPin, _txPin);
-    _pzemSerial = &Serial2;
+    // The PZEM004Tv30 library (v1.1.2) only has one real constructor:
+    //   PZEM004Tv30(HardwareSerial& port, uint8_t rx, uint8_t tx, uint8_t addr)
+    // This internally calls serial.begin() on EVERY instantiation.
+    //
+    // FIX: Pre-allocate ALL probe objects FIRST (so all serial.begin() calls
+    // happen in a burst), then flush the bus and let it settle BEFORE probing.
+    // This is the same pattern the old 2-device firmware used and it worked.
     
-    Serial.println("[Discovery] Scanning Modbus bus for active PZEM nodes...");
-    Serial.println("[Discovery] Allowing 3s bus warm-up...");
-    delay(3000); // Give sensors time to fully power up
+    const int SCAN_COUNT = MODBUS_SCAN_END - MODBUS_SCAN_START + 1;
     
+    // --- Phase 1: Create all candidates (serial.begin() called N times total) ---
+    Serial.println("[Discovery] Pre-allocating PZEM probe objects...");
+    PZEM004Tv30* candidates[10];
+    uint8_t candidateAddrs[10];
+    int candidateCount = 0;
+    
+    for (int i = 0; i < SCAN_COUNT && candidateCount < 10; i++) {
+        uint8_t addr = (uint8_t)(MODBUS_SCAN_START + i);
+        candidates[candidateCount] = new PZEM004Tv30(Serial2, _rxPin, _txPin, addr);
+        candidateAddrs[candidateCount] = addr;
+        candidateCount++;
+    }
+    
+    // --- Phase 2: Flush RX buffer, then let bus fully settle ---
+    while (Serial2.available()) Serial2.read();
+    Serial.println("[Discovery] Bus flushed. Waiting 4s for Modbus to settle...");
+    delay(4000);
+    
+    // --- Phase 3: Probe each pre-allocated object ---
     _activeNodeCount = 0;
-    for (uint8_t addr = MODBUS_SCAN_START; addr <= MODBUS_SCAN_END; addr++) {
-        if (_activeNodeCount >= MAX_NODES) break;
-        
-        Serial.printf("[Discovery] Probing address 0x%02X...\n", addr);
-        
-        // Use 2-argument constructor — does NOT call serial.begin() internally
-        // This is the key fix: keeps Serial2 stable between probes
-        PZEM004Tv30* testPzem = new PZEM004Tv30(*_pzemSerial, addr);
-        
-        // Try reading voltage 3 times with 500ms gaps
-        bool found = false;
-        for (int attempt = 0; attempt < 3 && !found; attempt++) {
-            delay(500);
-            float v = testPzem->voltage();
-            if (!isnan(v) && v > 0.0f) {
-                found = true;
-            }
+    for (int i = 0; i < candidateCount; i++) {
+        if (_activeNodeCount >= MAX_NODES) {
+            delete candidates[i];
+            continue;
         }
         
-        if (found) {
-            Serial.printf("[Discovery] FOUND PZEM Node at Address: 0x%02X\n", addr);
-            _pzems[_activeNodeCount] = testPzem;
-            _addresses[_activeNodeCount] = addr;
+        Serial.printf("[Discovery] Probing 0x%02X... ", candidateAddrs[i]);
+        
+        float v = candidates[i]->voltage();
+        if (!isnan(v) && v > 0.0f) {
+            Serial.printf("FOUND! %.1fV\n", v);
+            _pzems[_activeNodeCount] = candidates[i];
+            _addresses[_activeNodeCount] = candidateAddrs[i];
             _activeNodeCount++;
         } else {
-            // No response after 3 attempts — nothing at this address
-            delete testPzem;
+            Serial.println("no response.");
+            delete candidates[i];
         }
     }
     
-    Serial.printf("[Discovery] Complete. %d active node(s) found.\n", _activeNodeCount);
+    Serial.printf("[Discovery] Complete. %d active node(s).\n", _activeNodeCount);
     if (_activeNodeCount == 0) {
-        Serial.println("[Discovery] WARNING: No PZEM sensors detected!");
-        Serial.println("[Discovery] Check: 1) Power to sensors  2) TX/RX wiring  3) Modbus addresses are 0x01-0x0A");
+        Serial.println("[Discovery] WARNING: No sensors found!");
+        Serial.println("[Discovery] Check: 1) Power to PZEM  2) RX/TX wiring  3) Modbus addresses 0x01-0x0A");
     }
+
 #else
     Serial.println("[PZEM] SIMULATOR ACTIVE. Mocking 2 nodes.");
     _activeNodeCount = 2;
