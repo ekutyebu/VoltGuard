@@ -8,20 +8,11 @@
 #define SIMULATE_PZEM 0
 
 // ==========================================
-// Device 1 Settings (Modbus Address 0x01)
+// Dynamic Modbus Auto-Discovery Settings
 // ==========================================
-#define DEV1_ID "DEV_VOLTGUARD_001"
-#define DEV1_NAME "Living Room Lamp"
-#define DEV1_LOCATION "Living Room"
-#define DEV1_MODBUS_ADDR 0x01
-
-// ==========================================
-// Device 2 Settings (Modbus Address 0x02)
-// ==========================================
-#define DEV2_ID "DEV_VOLTGUARD_002"
-#define DEV2_NAME "TV Socket"
-#define DEV2_LOCATION "Living Room"
-#define DEV2_MODBUS_ADDR 0x02
+#define MAX_NODES 10              // Max number of active PZEM sensors to support
+#define MODBUS_SCAN_START 1       // Address to start scanning (0x01)
+#define MODBUS_SCAN_END 10        // Address to end scanning (0x0A)
 
 // ==========================================
 // Network Settings

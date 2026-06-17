@@ -15,11 +15,12 @@ FaultDetector::FaultDetector(int relayPin, int ledAlarmPin)
 }
 
 void FaultDetector::begin() {
-    pinMode(_relayPin, OUTPUT);
+    if (_relayPin != -1) {
+        pinMode(_relayPin, OUTPUT);
+        // Closed by default (Energized relay = path closed = Power ON)
+        digitalWrite(_relayPin, HIGH); 
+    }
     pinMode(_ledAlarmPin, OUTPUT);
-    
-    // Closed by default (Energized relay = path closed = Power ON)
-    digitalWrite(_relayPin, HIGH); 
     digitalWrite(_ledAlarmPin, LOW);
     
     Serial.println("[FaultDetector] Local Protection Engine active.");
@@ -90,7 +91,9 @@ void FaultDetector::tripRelay(FaultType reason) {
     }
 
     // Open Relay (De-energize = Power OFF)
-    digitalWrite(_relayPin, LOW);
+    if (_relayPin != -1) {
+        digitalWrite(_relayPin, LOW);
+    }
     digitalWrite(_ledAlarmPin, HIGH);
     
     _relayTripped = true;
@@ -102,7 +105,9 @@ void FaultDetector::tripRelay(FaultType reason) {
 }
 
 void FaultDetector::resetTrip() {
-    digitalWrite(_relayPin, HIGH); // Path closed = Power ON
+    if (_relayPin != -1) {
+        digitalWrite(_relayPin, HIGH); // Path closed = Power ON
+    }
     digitalWrite(_ledAlarmPin, LOW);
     
     _relayTripped = false;

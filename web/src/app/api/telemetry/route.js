@@ -34,8 +34,6 @@ export async function POST(request) {
     await prisma.device.upsert({
       where: { id: deviceId },
       update: {
-        name: deviceName || undefined,
-        location: location || undefined,
         status: initialStatus,
         wifiSSID: wifiSSID || undefined,
         wifiRSSI: wifiRSSI !== undefined ? wifiRSSI : undefined,

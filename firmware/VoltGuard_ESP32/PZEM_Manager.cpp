@@ -7,12 +7,13 @@
 
 PZEM_Manager::PZEM_Manager(int rxPin, int txPin) 
     : _rxPin(rxPin), _txPin(txPin), 
-      _accumulatedEnergy1(0.0f), _accumulatedEnergy2(0.0f), 
-      _lastReadTime(0) {
+      _lastReadTime(0), _activeNodeCount(0) {
+    for (int i = 0; i < MAX_NODES; i++) {
+        _accumulatedEnergy[i] = 0.0f;
 #if !SIMULATE_PZEM
-    _pzem1 = nullptr;
-    _pzem2 = nullptr;
+        _pzems[i] = nullptr;
 #endif
+    }
 }
 
 void PZEM_Manager::begin() {
@@ -22,14 +23,33 @@ void PZEM_Manager::begin() {
     HardwareSerial* pzemSerial = &Serial2;
     pzemSerial->begin(9600, SERIAL_8N1, _rxPin, _txPin);
     
-    // Construct separate objects referencing distinct Modbus addresses
-    _pzem1 = new PZEM004Tv30(*pzemSerial, _rxPin, _txPin, DEV1_MODBUS_ADDR);
-    _pzem2 = new PZEM004Tv30(*pzemSerial, _rxPin, _txPin, DEV2_MODBUS_ADDR);
+    Serial.println("[Discovery] Scanning Modbus bus for active PZEM nodes...");
     
-    Serial.printf("[PZEM] Dual Nodes initialized on Serial2. Addr1: 0x%02X, Addr2: 0x%02X\n", 
-                  DEV1_MODBUS_ADDR, DEV2_MODBUS_ADDR);
+    _activeNodeCount = 0;
+    for (uint8_t addr = MODBUS_SCAN_START; addr <= MODBUS_SCAN_END; addr++) {
+        if (_activeNodeCount >= MAX_NODES) break;
+        
+        PZEM004Tv30* testPzem = new PZEM004Tv30(*pzemSerial, _rxPin, _txPin, addr);
+        
+        // Probe the device by trying to read voltage
+        float v = testPzem->voltage();
+        if (!isnan(v)) {
+            Serial.printf("[Discovery] Found PZEM Node at Address: 0x%02X\n", addr);
+            _pzems[_activeNodeCount] = testPzem;
+            _addresses[_activeNodeCount] = addr;
+            _activeNodeCount++;
+        } else {
+            // Delete if no response to free memory
+            delete testPzem;
+        }
+    }
+    
+    Serial.printf("[Discovery] Complete. Active Nodes: %d\n", _activeNodeCount);
 #else
-    Serial.println("[PZEM] DUAL SIMULATOR ACTIVE. Generating Compressor & Fan profiles.");
+    Serial.println("[PZEM] SIMULATOR ACTIVE. Mocking 2 nodes.");
+    _activeNodeCount = 2;
+    _addresses[0] = 0x01;
+    _addresses[1] = 0x02;
 #endif
 }
 
@@ -37,7 +57,6 @@ ElectricalMetrics PZEM_Manager::readMetrics(int deviceIndex) {
     unsigned long now = millis();
     float elapsedSeconds = (now - _lastReadTime) / 1000.0f;
     
-    // We only update _lastReadTime on the first index read to maintain timing coherence
     if (deviceIndex == 0) {
         _lastReadTime = now;
     }
@@ -45,21 +64,21 @@ ElectricalMetrics PZEM_Manager::readMetrics(int deviceIndex) {
 #if SIMULATE_PZEM
     ElectricalMetrics m = generateSimulation(deviceIndex);
     
-    // Accumulate energy individually
     if (m.isValid) {
         float powerKW = m.power / 1000.0f;
         float elapsedHours = elapsedSeconds / 3600.0f;
-        if (deviceIndex == 0) {
-            _accumulatedEnergy1 += powerKW * elapsedHours;
-            m.energy = _accumulatedEnergy1;
-        } else {
-            _accumulatedEnergy2 += powerKW * elapsedHours;
-            m.energy = _accumulatedEnergy2;
-        }
+        _accumulatedEnergy[deviceIndex] += powerKW * elapsedHours;
+        m.energy = _accumulatedEnergy[deviceIndex];
     }
     return m;
 #else
-    PZEM004Tv30* pzem = (deviceIndex == 0) ? (PZEM004Tv30*)_pzem1 : (PZEM004Tv30*)_pzem2;
+    if (deviceIndex < 0 || deviceIndex >= _activeNodeCount) {
+        ElectricalMetrics m;
+        m.isValid = false;
+        return m;
+    }
+
+    PZEM004Tv30* pzem = (PZEM004Tv30*)_pzems[deviceIndex];
     ElectricalMetrics m;
     
     if (pzem == nullptr) {
@@ -74,10 +93,8 @@ ElectricalMetrics PZEM_Manager::readMetrics(int deviceIndex) {
     m.frequency = pzem->frequency();
     m.pf = pzem->pf();
 
-    // Check validation (if connection is unplugged or address wrong, returns NaN)
     if (isnan(m.voltage) || isnan(m.current) || isnan(m.power) || isnan(m.frequency) || isnan(m.pf)) {
         m.isValid = false;
-        // Serial.printf("[PZEM] Node %d read timeout.\n", deviceIndex + 1);
     } else {
         m.isValid = true;
     }
@@ -87,17 +104,20 @@ ElectricalMetrics PZEM_Manager::readMetrics(int deviceIndex) {
 }
 
 void PZEM_Manager::resetEnergy(int deviceIndex) {
-    if (deviceIndex == 0) _accumulatedEnergy1 = 0.0f;
-    else _accumulatedEnergy2 = 0.0f;
+    if (deviceIndex >= 0 && deviceIndex < MAX_NODES) {
+        _accumulatedEnergy[deviceIndex] = 0.0f;
+    }
     
 #if !SIMULATE_PZEM
-    PZEM004Tv30* pzem = (deviceIndex == 0) ? (PZEM004Tv30*)_pzem1 : (PZEM004Tv30*)_pzem2;
-    if (pzem != nullptr) {
-        pzem->resetEnergy();
-        Serial.printf("[PZEM] Reset physical energy counter for Node %d\n", deviceIndex + 1);
+    if (deviceIndex >= 0 && deviceIndex < _activeNodeCount) {
+        PZEM004Tv30* pzem = (PZEM004Tv30*)_pzems[deviceIndex];
+        if (pzem != nullptr) {
+            pzem->resetEnergy();
+            Serial.printf("[PZEM] Reset physical energy counter for Node Address 0x%02X\n", _addresses[deviceIndex]);
+        }
     }
 #else
-    Serial.printf("[PZEM] Reset simulated energy counter for Node %d\n", deviceIndex + 1);
+    Serial.printf("[PZEM] Reset simulated energy counter for index %d\n", deviceIndex);
 #endif
 }
 

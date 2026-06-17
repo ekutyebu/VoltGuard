@@ -4,6 +4,7 @@
 #include "PZEM_Manager.h"
 #include "FaultDetector.h"
 #include "NetworkManager.h"
+#include <WiFi.h>
 
 // Struct to communicate readings and protection states between tasks
 struct TelemetryPayload {
@@ -21,9 +22,8 @@ QueueHandle_t telemetryQueue = nullptr;
 // Device Components
 PZEM_Manager pzem(PZEM_RX_PIN, PZEM_TX_PIN);
 
-// Independent protection loops for both mechatronic nodes
-FaultDetector faultDetector1(RELAY_1_PIN, LED_ALARM_PIN);
-FaultDetector faultDetector2(RELAY_2_PIN, LED_ALARM_PIN);
+// Array of independent protection loops for discovered nodes
+FaultDetector* detectors[MAX_NODES];
 
 NetworkManager network(WIFI_SSID, WIFI_PASSWORD, BACKEND_API_URL);
 
@@ -38,10 +38,17 @@ void setup() {
     Serial.println("   VoltGuard Industrial Fault Monitor (Multi-Node)");
     Serial.println("==================================================");
 
-    // Initialize local protection outputs and sensor drivers
-    faultDetector1.begin();
-    faultDetector2.begin();
+    // Initialize sensor drivers (This runs the Discovery process)
     pzem.begin();
+
+    // Dynamically allocate FaultDetectors for the discovered active nodes
+    int activeCount = pzem.getActiveNodeCount();
+    for (int i = 0; i < activeCount; i++) {
+        // Assign physical relays to the first two nodes, the rest get -1 (no relay)
+        int rPin = (i == 0) ? RELAY_1_PIN : (i == 1) ? RELAY_2_PIN : -1;
+        detectors[i] = new FaultDetector(rPin, LED_ALARM_PIN);
+        detectors[i]->begin();
+    }
 
     // Create a FreeRTOS queue to hold telemetry readings for transmission
     // Queue handles up to 20 payloads (enough for high frequency uploads)
@@ -93,8 +100,23 @@ void Task_ReadSensors(void* pvParameters) {
     Serial.println("[Task_ReadSensors] Multi-node monitoring task active on Core 1.");
 
     static unsigned long lastQueueTime = 0;
-    static FaultType lastFault1 = FAULT_NONE, lastFault2 = FAULT_NONE;
-    static bool lastTripped1 = false, lastTripped2 = false;
+    static FaultType lastFaults[MAX_NODES];
+    static bool lastTripped[MAX_NODES];
+    static bool initialized = false;
+    
+    if (!initialized) {
+        for(int i=0; i<MAX_NODES; i++) {
+            lastFaults[i] = FAULT_NONE;
+            lastTripped[i] = false;
+        }
+        initialized = true;
+    }
+
+    // Get the base MAC address to uniquely identify this ESP32
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    char macStr[13];
+    sprintf(macStr, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     for (;;) {
         // Wait for next cycle
@@ -106,74 +128,50 @@ void Task_ReadSensors(void* pvParameters) {
             lastQueueTime = millis();
         }
 
-        // --------------------------------------------------
-        // DEVICE 1: Air Compressor 1
-        // --------------------------------------------------
-        ElectricalMetrics m1 = pzem.readMetrics(0);
-        if (m1.isValid) {
-            FaultType activeFault = faultDetector1.checkMetrics(m1);
-            bool isTripped = faultDetector1.isRelayTripped();
+        int activeCount = pzem.getActiveNodeCount();
+        for (int i = 0; i < activeCount; i++) {
+            uint8_t addr = pzem.getNodeAddress(i);
+            ElectricalMetrics m = pzem.readMetrics(i);
             
-            bool faultChanged = (activeFault != lastFault1) || (isTripped != lastTripped1);
-            lastFault1 = activeFault;
-            lastTripped1 = isTripped;
+            if (m.isValid) {
+                FaultType activeFault = detectors[i]->checkMetrics(m);
+                bool isTripped = detectors[i]->isRelayTripped();
+                
+                bool faultChanged = (activeFault != lastFaults[i]) || (isTripped != lastTripped[i]);
+                lastFaults[i] = activeFault;
+                lastTripped[i] = isTripped;
 
-            // Log details locally in terminal
-            Serial.printf("[%s] V: %.1fV | I: %.2fA | P: %.1fW | Fault: %s | Relay: %s\n",
-                          DEV1_ID, m1.voltage, m1.current, m1.power, 
-                          faultDetector1.getFaultString(activeFault), isTripped ? "OPEN" : "CLOSED");
+                // Dynamically generate ID and default name based on MAC + Modbus Address
+                char devId[32];
+                sprintf(devId, "VG_%s_%02X", macStr, addr);
+                
+                char devName[32];
+                sprintf(devName, "Sensor Node 0x%02X", addr);
 
-            if (timeToQueue || faultChanged) {
-                TelemetryPayload payload;
-                strncpy(payload.deviceId, DEV1_ID, sizeof(payload.deviceId));
-                strncpy(payload.deviceName, DEV1_NAME, sizeof(payload.deviceName));
-                strncpy(payload.location, DEV1_LOCATION, sizeof(payload.location));
-                payload.metrics = m1;
-                payload.fault = activeFault;
-                payload.relayTripped = isTripped;
+                // Log details locally in terminal
+                Serial.printf("[%s] V: %.1fV | I: %.2fA | P: %.1fW | Fault: %s | Relay: %s\n",
+                              devId, m.voltage, m.current, m.power, 
+                              detectors[i]->getFaultString(activeFault), isTripped ? "OPEN" : "CLOSED");
 
-                if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
-                    Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", DEV1_ID);
+                if (timeToQueue || faultChanged) {
+                    TelemetryPayload payload;
+                    strncpy(payload.deviceId, devId, sizeof(payload.deviceId));
+                    strncpy(payload.deviceName, devName, sizeof(payload.deviceName));
+                    strncpy(payload.location, "Auto Discovered", sizeof(payload.location));
+                    payload.metrics = m;
+                    payload.fault = activeFault;
+                    payload.relayTripped = isTripped;
+
+                    if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
+                        Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", devId);
+                    }
                 }
+            } else {
+                Serial.printf("[Task_ReadSensors] Error reading Node Address 0x%02X\n", addr);
             }
-        } else {
-            Serial.printf("[Task_ReadSensors] Error reading %s (0x%02X)\n", DEV1_ID, DEV1_MODBUS_ADDR);
-        }
 
-        // Small inter-device delay to clear the RS485 Modbus bus lines
-        vTaskDelay(pdMS_TO_TICKS(80));
-
-        // --------------------------------------------------
-        // DEVICE 2: Extraction Fan 2
-        // --------------------------------------------------
-        ElectricalMetrics m2 = pzem.readMetrics(1);
-        if (m2.isValid) {
-            FaultType activeFault = faultDetector2.checkMetrics(m2);
-            bool isTripped = faultDetector2.isRelayTripped();
-            
-            bool faultChanged = (activeFault != lastFault2) || (isTripped != lastTripped2);
-            lastFault2 = activeFault;
-            lastTripped2 = isTripped;
-
-            Serial.printf("[%s] V: %.1fV | I: %.2fA | P: %.1fW | Fault: %s | Relay: %s\n",
-                          DEV2_ID, m2.voltage, m2.current, m2.power, 
-                          faultDetector2.getFaultString(activeFault), isTripped ? "OPEN" : "CLOSED");
-
-            if (timeToQueue || faultChanged) {
-                TelemetryPayload payload;
-                strncpy(payload.deviceId, DEV2_ID, sizeof(payload.deviceId));
-                strncpy(payload.deviceName, DEV2_NAME, sizeof(payload.deviceName));
-                strncpy(payload.location, DEV2_LOCATION, sizeof(payload.location));
-                payload.metrics = m2;
-                payload.fault = activeFault;
-                payload.relayTripped = isTripped;
-
-                if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
-                    Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", DEV2_ID);
-                }
-            }
-        } else {
-            Serial.printf("[Task_ReadSensors] Error reading %s (0x%02X)\n", DEV2_ID, DEV2_MODBUS_ADDR);
+            // Small inter-device delay to clear the RS485 Modbus bus lines
+            vTaskDelay(pdMS_TO_TICKS(80));
         }
     }
 }
