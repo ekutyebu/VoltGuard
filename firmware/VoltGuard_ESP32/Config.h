@@ -5,22 +5,22 @@
 // System Modes
 // ==========================================
 // If enabled, PZEM-004T physical readings are simulated. Great for testing!
-#define SIMULATE_PZEM 1
+#define SIMULATE_PZEM 0
 
 // ==========================================
 // Device 1 Settings (Modbus Address 0x01)
 // ==========================================
 #define DEV1_ID "DEV_VOLTGUARD_001"
-#define DEV1_NAME "Air Compressor 1"
-#define DEV1_LOCATION "Production Area A"
+#define DEV1_NAME "Living Room Lamp"
+#define DEV1_LOCATION "Living Room"
 #define DEV1_MODBUS_ADDR 0x01
 
 // ==========================================
 // Device 2 Settings (Modbus Address 0x02)
 // ==========================================
 #define DEV2_ID "DEV_VOLTGUARD_002"
-#define DEV2_NAME "Extraction Fan 2"
-#define DEV2_LOCATION "Production Area A"
+#define DEV2_NAME "TV Socket"
+#define DEV2_LOCATION "Living Room"
 #define DEV2_MODBUS_ADDR 0x02
 
 // ==========================================
