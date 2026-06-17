@@ -41,6 +41,8 @@ private:
     uint8_t _addresses[MAX_NODES];
     
 #if !SIMULATE_PZEM
+    // Stored serial pointer — initialized ONCE, never re-initialized
+    HardwareSerial* _pzemSerial;
     // Pointers to the physical PZEM004Tv30 instances
     void* _pzems[MAX_NODES];
 #endif

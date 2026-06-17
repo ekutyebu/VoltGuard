@@ -14,38 +14,47 @@ PZEM_Manager::PZEM_Manager(int rxPin, int txPin)
         _pzems[i] = nullptr;
 #endif
     }
+#if !SIMULATE_PZEM
+    _pzemSerial = nullptr;
+#endif
 }
 
 void PZEM_Manager::begin() {
     _lastReadTime = millis();
 #if !SIMULATE_PZEM
-    // Initialize Hardware Serial 2 once for the Modbus shared bus
-    HardwareSerial* pzemSerial = &Serial2;
-    pzemSerial->begin(9600, SERIAL_8N1, _rxPin, _txPin);
+    // Initialize Hardware Serial 2 ONCE for the entire Modbus bus
+    // IMPORTANT: We call begin() here and never again. The 4-argument PZEM constructor
+    // also calls serial.begin() internally which destroys the bus — so we must use
+    // the 2-argument constructor (HardwareSerial&, addr) for all subsequent instantiation.
+    Serial2.begin(9600, SERIAL_8N1, _rxPin, _txPin);
+    _pzemSerial = &Serial2;
     
     Serial.println("[Discovery] Scanning Modbus bus for active PZEM nodes...");
-    Serial.println("[Discovery] Allowing 2s bus warm-up...");
-    delay(2000); // Give sensors time to power up before scanning
+    Serial.println("[Discovery] Allowing 3s bus warm-up...");
+    delay(3000); // Give sensors time to fully power up
     
     _activeNodeCount = 0;
     for (uint8_t addr = MODBUS_SCAN_START; addr <= MODBUS_SCAN_END; addr++) {
         if (_activeNodeCount >= MAX_NODES) break;
         
         Serial.printf("[Discovery] Probing address 0x%02X...\n", addr);
-        PZEM004Tv30* testPzem = new PZEM004Tv30(*pzemSerial, _rxPin, _txPin, addr);
         
-        // Try reading 3 times with 300ms gap — some sensors need time to respond
+        // Use 2-argument constructor — does NOT call serial.begin() internally
+        // This is the key fix: keeps Serial2 stable between probes
+        PZEM004Tv30* testPzem = new PZEM004Tv30(*_pzemSerial, addr);
+        
+        // Try reading voltage 3 times with 500ms gaps
         bool found = false;
         for (int attempt = 0; attempt < 3 && !found; attempt++) {
-            delay(300);
+            delay(500);
             float v = testPzem->voltage();
-            if (!isnan(v)) {
+            if (!isnan(v) && v > 0.0f) {
                 found = true;
             }
         }
         
         if (found) {
-            Serial.printf("[Discovery] ✓ Found PZEM Node at Address: 0x%02X\n", addr);
+            Serial.printf("[Discovery] FOUND PZEM Node at Address: 0x%02X\n", addr);
             _pzems[_activeNodeCount] = testPzem;
             _addresses[_activeNodeCount] = addr;
             _activeNodeCount++;
@@ -57,7 +66,8 @@ void PZEM_Manager::begin() {
     
     Serial.printf("[Discovery] Complete. %d active node(s) found.\n", _activeNodeCount);
     if (_activeNodeCount == 0) {
-        Serial.println("[Discovery] WARNING: No PZEM sensors detected! Check wiring and Modbus addresses.");
+        Serial.println("[Discovery] WARNING: No PZEM sensors detected!");
+        Serial.println("[Discovery] Check: 1) Power to sensors  2) TX/RX wiring  3) Modbus addresses are 0x01-0x0A");
     }
 #else
     Serial.println("[PZEM] SIMULATOR ACTIVE. Mocking 2 nodes.");
