@@ -39,7 +39,7 @@ struct WiFiCredential {
 // Feel free to add as many APs as you need here!
 static const WiFiCredential WIFI_NETWORKS[] = {
     {"DarkDev", "Man2001@"},
-    {"SmartPoultryWiFi", "poultry123"},
+    {"Javis", "1234567890"},
     {"HomeNet", "home1234"},
     {"VoltGuard_Test", "TestPassword123"}
 };

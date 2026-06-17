@@ -38,8 +38,8 @@ export default function Gauge({
     <div style={containerStyle} className="glass-panel" id={`gauge-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <span style={titleStyle}>{title}</span>
       
-      <div style={svgContainerStyle}>
-        <svg width="140" height="140" viewBox="0 0 120 120">
+      <div style={svgContainerStyle} className="gauge-svg-container">
+        <svg viewBox="0 0 120 120" className="gauge-svg">
           <defs>
             <radialGradient id={`glow-${title}`} cx="50%" cy="50%" r="50%">
               <stop offset="60%" stopColor="var(--bg-card)" stopOpacity="0" />
@@ -119,8 +119,6 @@ const svgContainerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '140px',
-  height: '140px',
 };
 
 const textOverlayStyle = {

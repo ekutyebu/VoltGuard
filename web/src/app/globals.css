@@ -430,10 +430,114 @@ button, input, select {
   }
 }
 
-/* Extra Small Mobile (<= 480px) */
+/* ============================================================
+   Gauge Component Sizing
+   ============================================================ */
+.gauge-svg-container {
+  width: 140px;
+  height: 140px;
+}
+
+.gauge-svg {
+  width: 140px;
+  height: 140px;
+}
+
+/* ============================================================
+   Mobile Card Views — show on mobile, hide desktop table
+   ============================================================ */
+
+/* Default: show tables, hide cards */
+.alarms-mobile-cards,
+.devices-mobile-cards {
+  display: none;
+}
+
+/* Mobile Card Layouts */
+.alarm-mobile-card,
+.device-mobile-card {
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Alarm Card */
+.alarm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.alarm-card-device {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alarm-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+.alarm-card-metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  text-align: center;
+}
+
+.alarm-card-metric-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.alarm-card-metric-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.alarm-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Device Card */
+.device-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* Alarms & Devices mobile card container layout */
+.alarms-mobile-cards,
+.devices-mobile-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================
+   Extra Small Mobile (<= 480px)
+   ============================================================ */
 @media (max-width: 480px) {
   #main-header .header-nav a {
-    flex: 1 1 100% !important; /* Stack nav buttons full-width */
+    flex: 1 1 100% !important;
+    justify-content: center;
   }
 
   #main-header .header-user-control {
@@ -448,11 +552,18 @@ button, input, select {
   }
 
   .gauges-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 gauges per row on phone */
+    gap: 12px !important;
+  }
+
+  /* 3rd gauge — full width on very small phones */
+  .gauges-grid > div:nth-child(3) {
+    grid-column: 1 / -1;
   }
 
   .metrics-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
   }
 
   .chart-panel {
@@ -462,4 +573,200 @@ button, input, select {
   .alarms-panel {
     padding: 16px !important;
   }
+
+  /* Metric number size reduction for small screens */
+  .metrics-grid h3 {
+    font-size: 1.5rem !important;
+  }
+
+  /* Health status title wrap fix */
+  .health-status-banner h2 {
+    font-size: 0.85rem !important;
+  }
+
+  .selector-group label {
+    display: none; /* Hide "Target Node:" label on very small screens */
+  }
 }
+
+/* ============================================================
+   Tablet Breakpoint (768px) — Activate card views
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Layout adjustments */
+  .main-content {
+    padding: 0 12px !important;
+    gap: 16px !important;
+  }
+
+  /* Header */
+  #main-header {
+    flex-direction: column !important;
+    padding: 16px !important;
+    gap: 16px !important;
+    margin-bottom: 20px !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+  }
+
+  #main-header .header-nav {
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 6px !important;
+  }
+
+  #main-header .header-nav a {
+    padding: 8px 14px !important;
+    font-size: 0.82rem !important;
+    flex: 1 1 calc(33% - 8px);
+    min-width: 90px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #main-header .header-user-control {
+    width: 100% !important;
+    justify-content: space-between !important;
+    border-top: 1px solid var(--border-muted) !important;
+    padding-top: 14px !important;
+    gap: 10px !important;
+  }
+
+  #main-header .header-user-info {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+
+  #main-header #logout-button {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Dashboard top bar */
+  .dashboard-top-bar {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .health-status-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 14px 18px !important;
+  }
+
+  .dashboard-metadata {
+    width: 100% !important;
+    border-top: 1px solid var(--border-muted) !important;
+    padding-top: 10px !important;
+    gap: 16px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Page headers */
+  .page-header-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .page-header-container button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Forms */
+  .form-card {
+    padding: 16px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-grid button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .edit-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Filters toolbar */
+  .filter-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 14px 16px !important;
+    gap: 12px !important;
+  }
+
+  .filter-inputs-grid {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .filter-inputs-grid > div {
+    width: 100% !important;
+  }
+
+  .filter-inputs-grid button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* === Show card views, hide desktop tables === */
+  .alarms-desktop-table,
+  .devices-desktop-table {
+    display: none !important;
+  }
+
+  .alarms-mobile-cards,
+  .devices-mobile-cards {
+    display: flex !important;
+  }
+
+  /* Gauges — 3 per row collapses to auto */
+  .gauges-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* Metric cards stay 3-col on tablet, wrap to 1-col on 480 */
+  .metrics-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* Charts: stack vertically */
+  .charts-alerts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Gauge SVG — slightly smaller on tablet */
+  .gauge-svg-container {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  .gauge-svg {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  /* Page title scale */
+  h1 {
+    font-size: 1.4rem !important;
+  }
+
+  /* Body extra bottom padding so content isn't hidden behind mobile browser chrome */
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+}
+
