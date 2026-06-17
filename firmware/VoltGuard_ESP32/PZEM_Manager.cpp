@@ -24,27 +24,41 @@ void PZEM_Manager::begin() {
     pzemSerial->begin(9600, SERIAL_8N1, _rxPin, _txPin);
     
     Serial.println("[Discovery] Scanning Modbus bus for active PZEM nodes...");
+    Serial.println("[Discovery] Allowing 2s bus warm-up...");
+    delay(2000); // Give sensors time to power up before scanning
     
     _activeNodeCount = 0;
     for (uint8_t addr = MODBUS_SCAN_START; addr <= MODBUS_SCAN_END; addr++) {
         if (_activeNodeCount >= MAX_NODES) break;
         
+        Serial.printf("[Discovery] Probing address 0x%02X...\n", addr);
         PZEM004Tv30* testPzem = new PZEM004Tv30(*pzemSerial, _rxPin, _txPin, addr);
         
-        // Probe the device by trying to read voltage
-        float v = testPzem->voltage();
-        if (!isnan(v)) {
-            Serial.printf("[Discovery] Found PZEM Node at Address: 0x%02X\n", addr);
+        // Try reading 3 times with 300ms gap — some sensors need time to respond
+        bool found = false;
+        for (int attempt = 0; attempt < 3 && !found; attempt++) {
+            delay(300);
+            float v = testPzem->voltage();
+            if (!isnan(v)) {
+                found = true;
+            }
+        }
+        
+        if (found) {
+            Serial.printf("[Discovery] ✓ Found PZEM Node at Address: 0x%02X\n", addr);
             _pzems[_activeNodeCount] = testPzem;
             _addresses[_activeNodeCount] = addr;
             _activeNodeCount++;
         } else {
-            // Delete if no response to free memory
+            // No response after 3 attempts — nothing at this address
             delete testPzem;
         }
     }
     
-    Serial.printf("[Discovery] Complete. Active Nodes: %d\n", _activeNodeCount);
+    Serial.printf("[Discovery] Complete. %d active node(s) found.\n", _activeNodeCount);
+    if (_activeNodeCount == 0) {
+        Serial.println("[Discovery] WARNING: No PZEM sensors detected! Check wiring and Modbus addresses.");
+    }
 #else
     Serial.println("[PZEM] SIMULATOR ACTIVE. Mocking 2 nodes.");
     _activeNodeCount = 2;

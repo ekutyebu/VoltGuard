@@ -180,13 +180,12 @@ export async function POST(request) {
       }
     }
 
-    // 4. Update Device status and metadata
+    // 4. Update Device status only — name/location are NEVER overwritten here.
+    // They are set once on creation (in the upsert above) and only changeable via the dashboard.
     const deviceStatus = (hasActiveFault || relayTripped) ? 'FAULT' : 'ONLINE';
     await prisma.device.update({
       where: { id: deviceId },
       data: {
-        name: deviceName || undefined,
-        location: location || undefined,
         status: deviceStatus,
         updatedAt: new Date(),
       },

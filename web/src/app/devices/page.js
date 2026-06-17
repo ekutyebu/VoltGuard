@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   MapPin,
   Cpu,
+  Pencil,
 } from 'lucide-react';
 
 export default function DevicesPage() {
@@ -30,6 +31,9 @@ export default function DevicesPage() {
     maxCurrent: 15.0, maxPower: 3300,
     minPF: 0.80, maxEnergy: 10000,
   });
+
+  const [renamingDeviceId, setRenamingDeviceId] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const [isAdding, setIsAdding] = useState(false);
   const [addForm, setAddForm] = useState({ id: '', name: '', location: '' });
@@ -110,6 +114,31 @@ export default function DevicesPage() {
       const res = await fetch(`/api/devices/${id}`, { method: 'DELETE' });
       if (res.ok) { setSuccessMsg('Device purged from registry.'); fetchDevices(); }
       else { setErrorMsg('Failed to delete device.'); }
+    } catch (err) { setErrorMsg('Network error.'); }
+  };
+
+  const startRename = (device) => {
+    setRenamingDeviceId(device.id);
+    setRenameValue(device.name);
+    setErrorMsg(''); setSuccessMsg('');
+  };
+
+  const handleRename = async (id) => {
+    if (!renameValue.trim()) { setErrorMsg('Name cannot be empty.'); return; }
+    try {
+      const res = await fetch(`/api/devices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: renameValue.trim() }),
+      });
+      if (res.ok) {
+        setSuccessMsg(`Device renamed to "${renameValue.trim()}" successfully!`);
+        setRenamingDeviceId(null);
+        fetchDevices();
+      } else {
+        const data = await res.json();
+        setErrorMsg(data.error || 'Failed to rename device.');
+      }
     } catch (err) { setErrorMsg('Network error.'); }
   };
 
@@ -230,8 +259,35 @@ export default function DevicesPage() {
                     return (
                       <tr key={device.id} id={`device-row-${device.id}`} style={{ borderBottom: '1px solid var(--border-muted)' }}>
                         <td style={{ padding: '13px 16px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <strong>{device.name}</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {renamingDeviceId === device.id ? (
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  className="form-input"
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleRename(device.id); if (e.key === 'Escape') setRenamingDeviceId(null); }}
+                                  style={{ padding: '4px 8px', fontSize: '0.85rem', height: '30px', minWidth: '150px' }}
+                                />
+                                <button onClick={() => handleRename(device.id)} style={{ background: 'var(--color-cyan)', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', color: '#000' }}><Check size={13} /></button>
+                                <button onClick={() => setRenamingDeviceId(null)} style={{ background: 'transparent', border: '1px solid var(--border-muted)', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={13} /></button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <strong>{device.name}</strong>
+                                {isAdmin && (
+                                  <button
+                                    title="Rename device"
+                                    onClick={() => startRename(device)}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', lineHeight: 1 }}
+                                  >
+                                    <Pencil size={12} />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             <span style={{ fontSize: '0.7rem', color: 'var(--color-cyan)', fontFamily: 'var(--font-mono)', fontWeight: '600' }}>{device.id}</span>
                           </div>
                         </td>
@@ -267,8 +323,35 @@ export default function DevicesPage() {
                   <div className="device-card-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Cpu size={16} color="var(--color-cyan)" />
-                      <div>
-                        <strong style={{ fontSize: '0.95rem' }}>{device.name}</strong>
+                      <div style={{ flex: 1 }}>
+                        {renamingDeviceId === device.id ? (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <input
+                              autoFocus
+                              type="text"
+                              className="form-input"
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleRename(device.id); if (e.key === 'Escape') setRenamingDeviceId(null); }}
+                              style={{ padding: '4px 8px', fontSize: '0.85rem', height: '30px', flex: 1, minWidth: '120px' }}
+                            />
+                            <button onClick={() => handleRename(device.id)} style={{ background: 'var(--color-cyan)', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', color: '#000' }}><Check size={13} /></button>
+                            <button onClick={() => setRenamingDeviceId(null)} style={{ background: 'transparent', border: '1px solid var(--border-muted)', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={13} /></button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <strong style={{ fontSize: '0.95rem' }}>{device.name}</strong>
+                            {isAdmin && (
+                              <button
+                                title="Rename device"
+                                onClick={() => startRename(device)}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', lineHeight: 1 }}
+                              >
+                                <Pencil size={12} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <span style={{ display: 'block', fontSize: '0.68rem', color: 'var(--color-cyan)', fontFamily: 'var(--font-mono)', fontWeight: '600' }}>{device.id}</span>
                       </div>
                     </div>
