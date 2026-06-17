@@ -471,7 +471,7 @@ const mainContentStyle = {
 
 const topBarContainerStyle = {
   display: 'grid',
-  gridTemplateColumns: '320px 1fr',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
   gap: '20px',
   width: '100%',
 };
@@ -479,6 +479,7 @@ const topBarContainerStyle = {
 const selectorGroupStyle = {
   display: 'flex',
   alignItems: 'center',
+  flexWrap: 'wrap',
   gap: '12px',
   padding: '16px 20px',
   borderRadius: 'var(--radius-md)',
@@ -490,6 +491,7 @@ const selectLabelStyle = {
   color: 'var(--text-secondary)',
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
+  whiteSpace: 'nowrap',
 };
 
 const selectStyle = {
@@ -502,6 +504,7 @@ const selectStyle = {
   fontWeight: '500',
   outline: 'none',
   flex: '1',
+  minWidth: '180px',
   cursor: 'pointer',
 };
 
@@ -516,12 +519,15 @@ const refreshBtnStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'all var(--transition-fast)',
+  flexShrink: 0,
 };
 
 const healthStatusStyle = {
   display: 'flex',
+  flexWrap: 'wrap',
   alignItems: 'center',
   justifyContent: 'space-between',
+  gap: '16px',
   padding: '16px 24px',
   borderRadius: 'var(--radius-md)',
 };
@@ -531,6 +537,7 @@ const healthIndicatorBulletStyle = (color) => ({
   height: '12px',
   borderRadius: '50%',
   backgroundColor: color === 'red' ? 'var(--color-red)' : 'var(--color-cyan)',
+  flexShrink: 0,
 });
 
 const healthHeaderStyle = {
@@ -550,7 +557,8 @@ const healthStateTitleStyle = {
 
 const metadataStyle = {
   display: 'flex',
-  gap: '20px',
+  flexWrap: 'wrap',
+  gap: '16px',
 };
 
 const metaItemStyle = {
@@ -559,6 +567,7 @@ const metaItemStyle = {
   gap: '6px',
   fontSize: '0.8rem',
   color: 'var(--text-secondary)',
+  whiteSpace: 'nowrap',
 };
 
 const emptyStateContainerStyle = {
