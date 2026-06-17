@@ -92,9 +92,19 @@ void Task_ReadSensors(void* pvParameters) {
 
     Serial.println("[Task_ReadSensors] Multi-node monitoring task active on Core 1.");
 
+    static unsigned long lastQueueTime = 0;
+    static FaultType lastFault1 = NONE, lastFault2 = NONE;
+    static bool lastTripped1 = false, lastTripped2 = false;
+
     for (;;) {
         // Wait for next cycle
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        bool timeToQueue = false;
+        if (millis() - lastQueueTime >= SERVER_SEND_INTERVAL_MS) {
+            timeToQueue = true;
+            lastQueueTime = millis();
+        }
 
         // --------------------------------------------------
         // DEVICE 1: Air Compressor 1
@@ -103,22 +113,28 @@ void Task_ReadSensors(void* pvParameters) {
         if (m1.isValid) {
             FaultType activeFault = faultDetector1.checkMetrics(m1);
             bool isTripped = faultDetector1.isRelayTripped();
+            
+            bool faultChanged = (activeFault != lastFault1) || (isTripped != lastTripped1);
+            lastFault1 = activeFault;
+            lastTripped1 = isTripped;
 
             // Log details locally in terminal
             Serial.printf("[%s] V: %.1fV | I: %.2fA | P: %.1fW | Fault: %s | Relay: %s\n",
                           DEV1_ID, m1.voltage, m1.current, m1.power, 
                           faultDetector1.getFaultString(activeFault), isTripped ? "OPEN" : "CLOSED");
 
-            TelemetryPayload payload;
-            strncpy(payload.deviceId, DEV1_ID, sizeof(payload.deviceId));
-            strncpy(payload.deviceName, DEV1_NAME, sizeof(payload.deviceName));
-            strncpy(payload.location, DEV1_LOCATION, sizeof(payload.location));
-            payload.metrics = m1;
-            payload.fault = activeFault;
-            payload.relayTripped = isTripped;
+            if (timeToQueue || faultChanged) {
+                TelemetryPayload payload;
+                strncpy(payload.deviceId, DEV1_ID, sizeof(payload.deviceId));
+                strncpy(payload.deviceName, DEV1_NAME, sizeof(payload.deviceName));
+                strncpy(payload.location, DEV1_LOCATION, sizeof(payload.location));
+                payload.metrics = m1;
+                payload.fault = activeFault;
+                payload.relayTripped = isTripped;
 
-            if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
-                Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", DEV1_ID);
+                if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
+                    Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", DEV1_ID);
+                }
             }
         } else {
             Serial.printf("[Task_ReadSensors] Error reading %s (0x%02X)\n", DEV1_ID, DEV1_MODBUS_ADDR);
@@ -134,21 +150,27 @@ void Task_ReadSensors(void* pvParameters) {
         if (m2.isValid) {
             FaultType activeFault = faultDetector2.checkMetrics(m2);
             bool isTripped = faultDetector2.isRelayTripped();
+            
+            bool faultChanged = (activeFault != lastFault2) || (isTripped != lastTripped2);
+            lastFault2 = activeFault;
+            lastTripped2 = isTripped;
 
             Serial.printf("[%s] V: %.1fV | I: %.2fA | P: %.1fW | Fault: %s | Relay: %s\n",
                           DEV2_ID, m2.voltage, m2.current, m2.power, 
                           faultDetector2.getFaultString(activeFault), isTripped ? "OPEN" : "CLOSED");
 
-            TelemetryPayload payload;
-            strncpy(payload.deviceId, DEV2_ID, sizeof(payload.deviceId));
-            strncpy(payload.deviceName, DEV2_NAME, sizeof(payload.deviceName));
-            strncpy(payload.location, DEV2_LOCATION, sizeof(payload.location));
-            payload.metrics = m2;
-            payload.fault = activeFault;
-            payload.relayTripped = isTripped;
+            if (timeToQueue || faultChanged) {
+                TelemetryPayload payload;
+                strncpy(payload.deviceId, DEV2_ID, sizeof(payload.deviceId));
+                strncpy(payload.deviceName, DEV2_NAME, sizeof(payload.deviceName));
+                strncpy(payload.location, DEV2_LOCATION, sizeof(payload.location));
+                payload.metrics = m2;
+                payload.fault = activeFault;
+                payload.relayTripped = isTripped;
 
-            if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
-                Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", DEV2_ID);
+                if (xQueueSend(telemetryQueue, &payload, pdMS_TO_TICKS(30)) != pdPASS) {
+                    Serial.printf("[Task_ReadSensors] Queue overflow for %s\n", DEV2_ID);
+                }
             }
         } else {
             Serial.printf("[Task_ReadSensors] Error reading %s (0x%02X)\n", DEV2_ID, DEV2_MODBUS_ADDR);
