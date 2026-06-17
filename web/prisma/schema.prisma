@@ -21,6 +21,8 @@ model Device {
   name        String
   location    String
   status      String        @default("OFFLINE") // ONLINE, OFFLINE, FAULT
+  wifiSSID    String?
+  wifiRSSI    Int?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   threshold   Threshold?

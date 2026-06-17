@@ -18,6 +18,8 @@ export async function POST(request) {
       fault,
       relayTripped,
       timestamp,
+      wifiSSID,
+      wifiRSSI,
     } = body;
 
     if (!deviceId) {
@@ -34,12 +36,17 @@ export async function POST(request) {
       update: {
         name: deviceName || undefined,
         location: location || undefined,
+        status: initialStatus,
+        wifiSSID: wifiSSID || undefined,
+        wifiRSSI: wifiRSSI !== undefined ? wifiRSSI : undefined,
       },
       create: {
         id: deviceId,
         name: deviceName || 'Unknown Device',
         location: location || 'Unknown Location',
         status: initialStatus,
+        wifiSSID: wifiSSID || null,
+        wifiRSSI: wifiRSSI || null,
       },
     });
 

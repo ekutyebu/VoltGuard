@@ -34,7 +34,7 @@ void NetworkManager::begin() {
     }
 
     Serial.println("[Network] Scanning and connecting to best available network...");
-    wl_status_t status = wifiMulti.run();
+    uint8_t status = wifiMulti.run();
     if (status == WL_CONNECTED) {
         _wifiConnected = true;
         digitalWrite(LED_WIFI_PIN, HIGH);
@@ -66,7 +66,7 @@ void NetworkManager::handleConnection() {
             digitalWrite(LED_WIFI_PIN, LOW); // LED OFF
             Serial.println("[Network] Wi-Fi disconnected or connection lost. Re-scanning & connecting...");
             
-            wl_status_t status = wifiMulti.run();
+            uint8_t status = wifiMulti.run();
             if (status == WL_CONNECTED) {
                 _wifiConnected = true;
                 digitalWrite(LED_WIFI_PIN, HIGH);
@@ -258,7 +258,9 @@ String NetworkManager::serializeMetrics(const ElectricalMetrics& m, FaultType fa
     json += "\"frequency\":" + String(m.frequency, 2) + ",";
     json += "\"pf\":" + String(m.pf, 2) + ",";
     json += "\"fault\":\"" + faultStr + "\",";
-    json += "\"relayTripped\":" + String(relayTripped ? "true" : "false");
+    json += "\"relayTripped\":" + String(relayTripped ? "true" : "false") + ",";
+    json += "\"wifiSSID\":\"" + WiFi.SSID() + "\",";
+    json += "\"wifiRSSI\":" + String(WiFi.RSSI());
     
     if (timestamp > 0) {
         json += ",\"timestamp\":" + String(timestamp);

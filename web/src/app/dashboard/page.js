@@ -13,7 +13,8 @@ import {
   Cpu, 
   MapPin, 
   RefreshCw,
-  Clock
+  Clock,
+  Wifi
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -255,6 +256,10 @@ export default function Dashboard() {
                 <div style={metaItemStyle}>
                   <MapPin size={14} color="var(--text-muted)" />
                   <span>{deviceData.location}</span>
+                </div>
+                <div style={metaItemStyle} title={deviceData.wifiSSID ? `Wi-Fi RSSI: ${deviceData.wifiRSSI}dBm` : 'Wi-Fi Status'}>
+                  <Wifi size={14} color={deviceData.wifiRSSI && deviceData.wifiRSSI > -70 ? "var(--color-green)" : "var(--color-amber)"} />
+                  <span>{deviceData.wifiSSID || 'Local Network'}</span>
                 </div>
                 <div style={metaItemStyle}>
                   <Clock size={14} color="var(--text-muted)" />

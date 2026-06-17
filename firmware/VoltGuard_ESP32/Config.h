@@ -40,8 +40,8 @@ struct WiFiCredential {
 static const WiFiCredential WIFI_NETWORKS[] = {
     {"DarkDev", "Man2001@"},
     {"Javis", "1234567890"},
-    {"HomeNet", "home1234"},
-    {"VoltGuard_Test", "TestPassword123"}
+    {"le_joker", "joker237546"},
+    {"Monsieur_river", "River692192802"}
 };
 static const int WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWORKS[0]);
 
