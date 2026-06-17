@@ -286,3 +286,180 @@ button, input, select {
 .mono-num {
   font-family: var(--font-mono);
 }
+
+/* ==========================================================
+   Responsive Design & Mobile Optimization Media Queries
+   ========================================================== */
+
+/* Tablet & Mobile Layout Adaptations (<= 768px) */
+@media (max-width: 768px) {
+  /* Layout adjustments */
+  .main-content {
+    padding: 0 12px !important;
+    gap: 16px !important;
+  }
+
+  /* Header Optimization */
+  #main-header {
+    flex-direction: column !important;
+    padding: 16px !important;
+    gap: 16px !important;
+    margin-bottom: 20px !important;
+    border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+  }
+
+  #main-header .header-nav {
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 6px !important;
+  }
+
+  #main-header .header-nav a {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    flex: 1 1 calc(50% - 12px); /* Let buttons size evenly, stacking to 2 rows on tiny screens */
+    min-width: 110px;
+    justify-content: center;
+  }
+
+  #main-header .header-user-control {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-direction: row !important;
+    border-top: 1px solid var(--border-muted) !important;
+    padding-top: 14px !important;
+    gap: 10px !important;
+  }
+
+  #main-header .header-user-info {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+
+  #main-header #logout-button {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Dashboard Layout Grid Adjustments */
+  .dashboard-top-bar {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .health-status-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 14px 18px !important;
+  }
+
+  .dashboard-metadata {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    border-top: 1px solid var(--border-muted) !important;
+    padding-top: 10px !important;
+    gap: 16px !important;
+  }
+
+  /* Page headers (Alarms, Registry) */
+  .page-header-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    text-align: left !important;
+  }
+
+  .page-header-container button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Device management forms */
+  .form-card {
+    padding: 16px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-grid button {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-top: 6px;
+  }
+
+  .edit-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Alarms page toolbar */
+  .filter-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+
+  .filter-inputs-grid {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .filter-inputs-grid div {
+    width: 100% !important;
+  }
+
+  .filter-inputs-grid button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* Landscape Mobile / Tablet adjustments */
+@media (max-width: 1024px) {
+  .charts-alerts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* Extra Small Mobile (<= 480px) */
+@media (max-width: 480px) {
+  #main-header .header-nav a {
+    flex: 1 1 100% !important; /* Stack nav buttons full-width */
+  }
+
+  #main-header .header-user-control {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  #main-header .header-user-control button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .gauges-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chart-panel {
+    padding: 16px 10px !important;
+  }
+
+  .alarms-panel {
+    padding: 16px !important;
+  }
+}

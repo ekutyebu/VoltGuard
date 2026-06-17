@@ -37,7 +37,7 @@ export default function Header({ user }) {
         </div>
       </div>
 
-      <nav style={navStyle}>
+      <nav style={navStyle} className="header-nav">
         {navItems.map((item) => {
           const IconComponent = item.icon;
           const isActive = pathname === item.href;
@@ -50,8 +50,8 @@ export default function Header({ user }) {
         })}
       </nav>
 
-      <div style={userControlStyle}>
-        <div style={userInfoStyle}>
+      <div style={userControlStyle} className="header-user-control">
+        <div style={userInfoStyle} className="header-user-info">
           <UserIcon size={16} color="var(--text-secondary)" />
           <div style={userDetailsStyle}>
             <span style={usernameStyle}>{user?.username || 'Operator'}</span>

@@ -199,10 +199,10 @@ export default function Dashboard() {
     <div style={pageContainerStyle}>
       <Header user={user} />
       
-      <main style={mainContentStyle}>
+      <main style={mainContentStyle} className="main-content">
         {/* TOP STATUS BAR & DEVICE SELECTION */}
-        <section style={topBarContainerStyle}>
-          <div style={selectorGroupStyle} className="glass-panel">
+        <section style={topBarContainerStyle} className="dashboard-top-bar">
+          <div style={selectorGroupStyle} className="glass-panel selector-group">
             <Cpu size={18} color="var(--color-cyan)" />
             <label htmlFor="device-select" style={selectLabelStyle}>Target Node:</label>
             <select
@@ -238,7 +238,7 @@ export default function Dashboard() {
           {/* Health Status Banner */}
           <div 
             style={healthStatusStyle} 
-            className={`glass-panel ${isSystemFault ? 'glow-red' : 'glow-cyan'}`}
+            className={`glass-panel health-status-banner ${isSystemFault ? 'glow-red' : 'glow-cyan'}`}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div 
@@ -251,7 +251,7 @@ export default function Dashboard() {
               </div>
             </div>
             {deviceData && (
-              <div style={metadataStyle}>
+              <div style={metadataStyle} className="dashboard-metadata">
                 <div style={metaItemStyle}>
                   <MapPin size={14} color="var(--text-muted)" />
                   <span>{deviceData.location}</span>
@@ -276,7 +276,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* GRID 1: THREE DIAL GAUGES */}
-            <section style={gaugesGridStyle}>
+            <section style={gaugesGridStyle} className="gauges-grid">
               <Gauge 
                 value={latestMetrics.voltage}
                 min={deviceData?.threshold?.minVoltage || 180}
@@ -304,7 +304,7 @@ export default function Dashboard() {
             </section>
 
             {/* GRID 2: CORE ELECTRICAL METRIC CARDS */}
-            <section style={metricsGridStyle}>
+            <section style={metricsGridStyle} className="metrics-grid">
               <div style={metricCardStyle} className="glass-panel">
                 <div style={metricHeaderStyle}>
                   <Zap size={20} color="var(--color-amber)" />
@@ -349,9 +349,9 @@ export default function Dashboard() {
             </section>
 
             {/* GRID 3: DUAL-CHANNEL REAL-TIME TIMELINE CHART & ACTIVE ALARMS PANEL */}
-            <section style={chartsAlertsGridStyle}>
+            <section style={chartsAlertsGridStyle} className="charts-alerts-grid">
               {/* Chart Panel */}
-              <div style={chartPanelStyle} className="glass-panel">
+              <div style={chartPanelStyle} className="glass-panel chart-panel">
                 <h3 style={panelTitleStyle}>Real-time Power & Voltage Trends</h3>
                 
                 <div style={{ width: '100%', height: '300px', marginTop: '15px' }}>
@@ -388,8 +388,8 @@ export default function Dashboard() {
               </div>
 
               {/* Active Alarms Panel */}
-              <div style={alarmsPanelStyle} className="glass-panel">
-                <div style={alarmsHeaderStyle}>
+              <div style={alarmsPanelStyle} className="glass-panel alarms-panel">
+                <div style={alarmsHeaderStyle} className="alarms-header">
                   <h3 style={panelTitleStyle}>Active Warning System</h3>
                   <span className="badge badge-warning mono-num">{activeAlarms.length} Active</span>
                 </div>

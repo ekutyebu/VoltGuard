@@ -130,8 +130,8 @@ export default function AlarmsLogPage() {
     <div style={pageContainerStyle}>
       <Header user={user} />
 
-      <main style={mainContentStyle}>
-        <div style={pageHeaderStyle}>
+      <main style={mainContentStyle} className="main-content">
+        <div style={pageHeaderStyle} className="page-header-container">
           <div>
             <h1 style={pageTitleStyle}>Protection Alarm Archive</h1>
             <p style={pageSubtitleStyle}>Historical audit logs of electrical safety breaches and relay actions.</p>
@@ -139,13 +139,13 @@ export default function AlarmsLogPage() {
         </div>
 
         {/* ALARMS FILTERS TOOLBAR */}
-        <section style={filterToolbarStyle} className="glass-panel">
+        <section style={filterToolbarStyle} className="glass-panel filter-toolbar">
           <div style={filterGroupStyle}>
             <Filter size={16} color="var(--text-muted)" />
             <span style={filterToolbarLabelStyle}>Filter Logs:</span>
           </div>
 
-          <div style={filterInputsGridStyle}>
+          <div style={filterInputsGridStyle} className="filter-inputs-grid">
             <div style={selectWrapperStyle}>
               <select
                 id="filter-device-select"

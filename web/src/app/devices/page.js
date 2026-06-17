@@ -202,8 +202,8 @@ export default function DevicesPage() {
     <div style={pageContainerStyle}>
       <Header user={user} />
 
-      <main style={mainContentStyle}>
-        <div style={pageHeaderStyle}>
+      <main style={mainContentStyle} className="main-content">
+        <div style={pageHeaderStyle} className="page-header-container">
           <div>
             <h1 style={pageTitleStyle}>Machine Nodes Registry</h1>
             <p style={pageSubtitleStyle}>Define electrical overload and voltage thresholds per mechatronic asset.</p>
@@ -237,12 +237,12 @@ export default function DevicesPage() {
 
         {/* PROVISION NEW NODE CONTAINER */}
         {isAdding && (
-          <section style={formCardStyle} className="glass-panel glow-cyan">
+          <section style={formCardStyle} className="glass-panel glow-cyan form-card">
             <div style={formHeaderStyle}>
               <h3 style={formTitleStyle}>Register Machine Node</h3>
               <button onClick={() => setIsAdding(false)} style={closeBtnStyle}><X size={18} /></button>
             </div>
-            <form onSubmit={handleAddDevice} style={formGridStyle}>
+            <form onSubmit={handleAddDevice} style={formGridStyle} className="form-grid">
               <div style={inputGroupStyle}>
                 <label style={labelStyle}>Device ID (Must be unique)</label>
                 <input
@@ -377,7 +377,7 @@ export default function DevicesPage() {
 
         {/* THRESHOLD EDITING CONFIGURATION DRAWER */}
         {editingDeviceId && (
-          <section style={formCardStyle} className="glass-panel glow-cyan" id="thresholds-edit-panel">
+          <section style={formCardStyle} className="glass-panel glow-cyan form-card" id="thresholds-edit-panel">
             <div style={formHeaderStyle}>
               <h3 style={formTitleStyle}>
                 Configure Thresholds: <code style={{ color: 'var(--color-cyan)' }}>{editingDeviceId}</code>
@@ -393,7 +393,7 @@ export default function DevicesPage() {
             )}
 
             <form onSubmit={handleSaveEdit}>
-              <div style={editFormGridStyle}>
+              <div style={editFormGridStyle} className="edit-form-grid">
                 <div style={inputGroupStyle}>
                   <label style={labelStyle}>Machine Asset Name</label>
                   <input
