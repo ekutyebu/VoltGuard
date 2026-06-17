@@ -471,18 +471,20 @@ const mainContentStyle = {
 
 const topBarContainerStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gridTemplateColumns: 'minmax(320px, 450px) 1fr',
   gap: '20px',
   width: '100%',
+  alignItems: 'start',
 };
 
 const selectorGroupStyle = {
   display: 'flex',
   alignItems: 'center',
   flexWrap: 'wrap',
-  gap: '12px',
+  gap: '10px',
   padding: '16px 20px',
   borderRadius: 'var(--radius-md)',
+  width: '100%',
 };
 
 const selectLabelStyle = {
@@ -504,7 +506,11 @@ const selectStyle = {
   fontWeight: '500',
   outline: 'none',
   flex: '1',
-  minWidth: '180px',
+  minWidth: '0', // Allows flex items to shrink below their content size
+  maxWidth: '100%',
+  textOverflow: 'ellipsis',
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
   cursor: 'pointer',
 };
 
