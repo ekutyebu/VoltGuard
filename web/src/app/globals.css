@@ -552,18 +552,21 @@ button, input, select {
   }
 
   .gauges-grid {
-    grid-template-columns: 1fr 1fr !important; /* 2 gauges per row on phone */
+    grid-template-columns: 1fr !important; /* Stack gauges vertically on very small phones */
     gap: 12px !important;
   }
 
-  /* 3rd gauge — full width on very small phones */
   .gauges-grid > div:nth-child(3) {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .metrics-grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important; /* Stack metric cards vertically to prevent overlap */
     gap: 12px !important;
+  }
+
+  .edit-form-grid {
+    grid-template-columns: 1fr !important;
   }
 
   .chart-panel {
@@ -586,6 +589,12 @@ button, input, select {
 
   .selector-group label {
     display: none; /* Hide "Target Node:" label on very small screens */
+  }
+
+  .gauge-svg-container,
+  .gauge-svg {
+    width: 100px !important;
+    height: 100px !important;
   }
 }
 
@@ -730,15 +739,15 @@ button, input, select {
     display: flex !important;
   }
 
-  /* Gauges — 3 per row collapses to auto */
+  /* Gauges — auto wrap instead of forcing 3 columns */
   .gauges-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
     gap: 10px !important;
   }
 
-  /* Metric cards stay 3-col on tablet, wrap to 1-col on 480 */
+  /* Metric cards auto wrap */
   .metrics-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
     gap: 10px !important;
   }
 
