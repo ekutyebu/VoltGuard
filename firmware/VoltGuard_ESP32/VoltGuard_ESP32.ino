@@ -93,7 +93,7 @@ void Task_ReadSensors(void* pvParameters) {
     Serial.println("[Task_ReadSensors] Multi-node monitoring task active on Core 1.");
 
     static unsigned long lastQueueTime = 0;
-    static FaultType lastFault1 = NONE, lastFault2 = NONE;
+    static FaultType lastFault1 = FAULT_NONE, lastFault2 = FAULT_NONE;
     static bool lastTripped1 = false, lastTripped2 = false;
 
     for (;;) {
