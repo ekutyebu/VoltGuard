@@ -208,36 +208,52 @@ void NetworkManager::flushBuffer() {
 
 bool NetworkManager::uploadPayload(const String& jsonPayload) {
     HTTPClient http;
+    bool success = false;
+    String urlStr = String(_apiUrl);
     
     // Use secure client for HTTPS (Vercel) endpoints
-    String urlStr = String(_apiUrl);
     if (urlStr.startsWith("https://")) {
         WiFiClientSecure *secureClient = new WiFiClientSecure;
         secureClient->setInsecure(); // Skip CA cert validation (acceptable for IoT)
         http.begin(*secureClient, _apiUrl);
+        http.addHeader("Content-Type", "application/json");
+        http.setTimeout(HTTP_TIMEOUT_MS);
+        
+        int httpResponseCode = http.POST(jsonPayload);
+        if (httpResponseCode > 0) {
+            String response = http.getString();
+            if (httpResponseCode == 200 || httpResponseCode == 201) {
+                success = true;
+            } else {
+                Serial.printf("[HTTP] Warning: POST responded with code %d. Response: %s\n", 
+                              httpResponseCode, response.c_str());
+            }
+        } else {
+            Serial.printf("[HTTP] Error: POST request failed. Reason: %s\n", 
+                          http.errorToString(httpResponseCode).c_str());
+        }
+        http.end();
+        delete secureClient; // Free allocated memory
     } else {
         http.begin(_apiUrl);
-    }
-    http.addHeader("Content-Type", "application/json");
-    http.setTimeout(HTTP_TIMEOUT_MS);
-    
-    int httpResponseCode = http.POST(jsonPayload);
-    bool success = false;
-    
-    if (httpResponseCode > 0) {
-        String response = http.getString();
-        if (httpResponseCode == 200 || httpResponseCode == 201) {
-            success = true;
+        http.addHeader("Content-Type", "application/json");
+        http.setTimeout(HTTP_TIMEOUT_MS);
+        
+        int httpResponseCode = http.POST(jsonPayload);
+        if (httpResponseCode > 0) {
+            String response = http.getString();
+            if (httpResponseCode == 200 || httpResponseCode == 201) {
+                success = true;
+            } else {
+                Serial.printf("[HTTP] Warning: POST responded with code %d. Response: %s\n", 
+                              httpResponseCode, response.c_str());
+            }
         } else {
-            Serial.printf("[HTTP] Warning: POST responded with code %d. Response: %s\n", 
-                          httpResponseCode, response.c_str());
+            Serial.printf("[HTTP] Error: POST request failed. Reason: %s\n", 
+                          http.errorToString(httpResponseCode).c_str());
         }
-    } else {
-        Serial.printf("[HTTP] Error: POST request failed. Reason: %s\n", 
-                      http.errorToString(httpResponseCode).c_str());
+        http.end();
     }
-    
-    http.end();
     return success;
 }
 

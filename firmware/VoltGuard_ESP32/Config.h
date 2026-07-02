@@ -5,7 +5,7 @@
 // System Modes
 // ==========================================
 // If enabled, PZEM-004T physical readings are simulated. Great for testing!
-#define SIMULATE_PZEM 0
+#define SIMULATE_PZEM 1
 
 // ==========================================
 // Dynamic Modbus Auto-Discovery Settings
@@ -31,7 +31,7 @@ struct WiFiCredential {
 static const WiFiCredential WIFI_NETWORKS[] = {
     {"DarkDev", "Man2001@"},
     {"Javis", "1234567890"},
-    {"le_joker", "joker237546"},
+    {"Le_joker", "joker237546"},
     {"Monsieur_river", "River692192802"}
 };
 static const int WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWORKS[0]);
