@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include "Config.h"
 #include "PZEM_Manager.h"
 #include "FaultDetector.h"
@@ -27,6 +29,9 @@ FaultDetector* detectors[MAX_NODES];
 
 NetworkManager network(WIFI_SSID, WIFI_PASSWORD, BACKEND_API_URL);
 
+// LCD Instance
+LiquidCrystal_I2C lcd(LCD_I2C_ADDR, LCD_COLS, LCD_ROWS);
+
 // Task Declarations
 void Task_ReadSensors(void* pvParameters);
 void Task_Network(void* pvParameters);
@@ -38,11 +43,34 @@ void setup() {
     Serial.println("   VoltGuard Industrial Fault Monitor (Multi-Node)");
     Serial.println("==================================================");
 
+    // Initialize custom I2C pins for the LCD monitor
+    Wire.begin(LCD_SDA_PIN, LCD_SCL_PIN);
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("VoltGuard Hub");
+    lcd.setCursor(0, 1);
+    lcd.print("Initializing...");
+
     // Initialize sensor drivers (This runs the Discovery process)
     pzem.begin();
 
     // Dynamically allocate FaultDetectors for the discovered active nodes
     int activeCount = pzem.getActiveNodeCount();
+    
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("VoltGuard Hub");
+    lcd.setCursor(0, 1);
+    if (activeCount == 0) {
+        lcd.print("No Sensors Found");
+    } else {
+        char nodesMsg[16];
+        sprintf(nodesMsg, "Active Nodes: %d", activeCount);
+        lcd.print(nodesMsg);
+    }
+    delay(2000);
+
     for (int i = 0; i < activeCount; i++) {
         // Assign physical relays to the first two nodes, the rest get -1 (no relay)
         int rPin = (i == 0) ? RELAY_1_PIN : (i == 1) ? RELAY_2_PIN : -1;
@@ -55,6 +83,10 @@ void setup() {
     telemetryQueue = xQueueCreate(20, sizeof(TelemetryPayload));
     if (telemetryQueue == nullptr) {
         Serial.println("[System] Critical Error: Failed to create FreeRTOS Queue.");
+        lcd.clear();
+        lcd.print("System Error");
+        lcd.setCursor(0, 1);
+        lcd.print("Queue Failed");
         while (1) { delay(1000); }
     }
 
@@ -206,13 +238,36 @@ void Task_Network(void* pvParameters) {
     ArduinoOTA.begin();
 
     TelemetryPayload incomingPayload;
+    bool hasSensors = (pzem.getActiveNodeCount() > 0);
+    unsigned long lastStatusUpdate = 0;
 
     for (;;) {
         ArduinoOTA.handle();
         network.handleConnection();
 
+        bool hasData = false;
+
         // Wait for data to arrive from Core 1
         if (xQueueReceive(telemetryQueue, &incomingPayload, pdMS_TO_TICKS(100)) == pdPASS) {
+            hasData = true;
+            
+            // Print metrics on I2C LCD monitor
+            lcd.clear();
+            const char* idPtr = incomingPayload.deviceId;
+            const char* lastUnderscore = strrchr(idPtr, '_');
+            const char* displayId = lastUnderscore ? (lastUnderscore + 1) : idPtr;
+            
+            lcd.setCursor(0, 0);
+            lcd.printf("Node %s: %.1fV", displayId, incomingPayload.metrics.voltage);
+            
+            lcd.setCursor(0, 1);
+            if (incomingPayload.relayTripped) {
+                FaultDetector fd(-1, -1);
+                lcd.printf("TRIP! %s", fd.getFaultString(incomingPayload.fault));
+            } else {
+                lcd.printf("%.2fA  %.0fW", incomingPayload.metrics.current, incomingPayload.metrics.power);
+            }
+
             network.sendTelemetry(
                 incomingPayload.metrics, 
                 incomingPayload.fault, 
@@ -221,6 +276,20 @@ void Task_Network(void* pvParameters) {
                 incomingPayload.deviceName,
                 incomingPayload.location
             );
+        }
+
+        // If no sensors are active, update status screen periodically
+        if (!hasData && !hasSensors && (millis() - lastStatusUpdate > 2000)) {
+            lastStatusUpdate = millis();
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("VoltGuard Hub");
+            lcd.setCursor(0, 1);
+            if (network.isConnected()) {
+                lcd.print("WiFi Connected");
+            } else {
+                lcd.print("WiFi Offline");
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

@@ -55,6 +55,13 @@ static const int WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWOR
 #define LED_ALARM_PIN 2 // Built-in LED or external alarm LED indicator
 #define LED_WIFI_PIN 4  // Wi-Fi status LED indicator
 
+// I2C LCD Monitor Pin Mappings (safe custom pins)
+#define LCD_SDA_PIN 21  // SDA connected to ESP32 Pin 21
+#define LCD_SCL_PIN 19  // SCL connected to ESP32 Pin 19 (prevents conflict with Relay 2 on pin 22)
+#define LCD_I2C_ADDR 0x27 // Default I2C Address for most 1602/2004 LCD modules
+#define LCD_COLS 16       // 16 columns
+#define LCD_ROWS 2        // 2 rows
+
 // ==========================================
 // Sensor & Sampling Timings
 // ==========================================
