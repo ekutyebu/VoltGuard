@@ -276,7 +276,8 @@ void Task_Network(void* pvParameters) {
                 lcd.printf("%.2fA  %.0fW", incomingPayload.metrics.current, incomingPayload.metrics.power);
             }
 
-            network.sendTelemetry(
+            // Send telemetry to server and capture any threshold updates from the backend
+            ThresholdConfigs newThresholds = network.sendTelemetry(
                 incomingPayload.metrics, 
                 incomingPayload.fault, 
                 incomingPayload.relayTripped,
@@ -284,6 +285,32 @@ void Task_Network(void* pvParameters) {
                 incomingPayload.deviceName,
                 incomingPayload.location
             );
+
+            // If the server returned updated thresholds, find the matching detector and apply them.
+            // This allows the user to change limits in the dashboard UI and have them
+            // propagate to the ESP32 protection engine within 2 seconds.
+            if (newThresholds.valid) {
+                int activeCount = pzem.getActiveNodeCount();
+                for (int i = 0; i < activeCount; i++) {
+                    char devId[32];
+                    uint8_t mac[6];
+                    WiFi.macAddress(mac);
+                    char macStr[13];
+                    sprintf(macStr, "%02X%02X%02X%02X%02X%02X",
+                            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                    sprintf(devId, "VG_%s_%02X", macStr, pzem.getNodeAddress(i));
+                    if (strcmp(devId, incomingPayload.deviceId) == 0) {
+                        detectors[i]->updateThresholds(
+                            newThresholds.minVoltage,
+                            newThresholds.maxVoltage,
+                            newThresholds.maxCurrent,
+                            newThresholds.maxPower,
+                            newThresholds.minPF
+                        );
+                        break;
+                    }
+                }
+            }
         }
 
         // If no sensors are active, update status screen periodically

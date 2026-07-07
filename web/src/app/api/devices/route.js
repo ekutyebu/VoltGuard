@@ -62,8 +62,8 @@ export async function POST(request) {
         status: 'OFFLINE',
         threshold: {
           create: {
-            minVoltage: thresholds?.minVoltage || 195.0,
-            maxVoltage: thresholds?.maxVoltage || 253.0,
+            minVoltage: thresholds?.minVoltage || 180.0,
+            maxVoltage: thresholds?.maxVoltage || 255.0,
             maxCurrent: thresholds?.maxCurrent || 15.0,
             maxPower: thresholds?.maxPower || 3300.0,
             minPF: thresholds?.minPF || 0.80,

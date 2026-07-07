@@ -34,8 +34,8 @@ model Threshold {
   id         Int      @id @default(autoincrement())
   deviceId   String   @unique
   device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  minVoltage Float    @default(195.0)
-  maxVoltage Float    @default(253.0)
+  minVoltage Float    @default(180.0)
+  maxVoltage Float    @default(255.0)
   maxCurrent Float    @default(15.0)
   maxPower   Float    @default(3300.0)
   minPF      Float    @default(0.80)

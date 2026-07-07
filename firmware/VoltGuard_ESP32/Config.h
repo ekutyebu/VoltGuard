@@ -66,14 +66,14 @@ static const int WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWOR
 // Sensor & Sampling Timings
 // ==========================================
 #define SENSOR_READ_INTERVAL_MS 1000  // Read each PZEM every 1 second
-#define SERVER_SEND_INTERVAL_MS 10000 // Send telemetry to server every 10 seconds to avoid HTTP upload bottlenecks
+#define SERVER_SEND_INTERVAL_MS 2000  // Send telemetry to server every 2 seconds for rapid sync
 #define RING_BUFFER_SIZE 100           // Queue up to 100 readings if Wi-Fi goes down
 
 // ==========================================
 // Local Protection Thresholds (Fallback)
 // ==========================================
-#define THRESHOLD_MIN_VOLTAGE 195.0f   // Volts
-#define THRESHOLD_MAX_VOLTAGE 253.0f   // Volts
+#define THRESHOLD_MIN_VOLTAGE 180.0f   // Volts (relay opens if voltage drops below this)
+#define THRESHOLD_MAX_VOLTAGE 255.0f   // Volts (relay opens if voltage exceeds this)
 #define THRESHOLD_MAX_CURRENT 15.0f    // Amperes
 #define THRESHOLD_MAX_POWER   3300.0f  // Watts (Active Power)
 #define THRESHOLD_MIN_PF      0.80f    // Power Factor

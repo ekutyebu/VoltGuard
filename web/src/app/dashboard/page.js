@@ -121,7 +121,7 @@ export default function Dashboard() {
       if (isPolling) {
         fetchDeviceMetrics();
       }
-    }, 2000); // 2-second polling frequency
+    }, 1000); // 1-second polling frequency for rapid synchronization
     
     return () => clearInterval(interval);
   }, [user, selectedDeviceId, isPolling, fetchDeviceMetrics]);
@@ -201,6 +201,26 @@ export default function Dashboard() {
       <Header user={user} />
       
       <main style={mainContentStyle} className="main-content">
+        {/* CRITICAL SAFETY ALERT BANNER */}
+        {isSystemFault && (
+          <div 
+            style={alertBannerStyle} 
+            className="glass-panel alert-banner pulse-border-red"
+          >
+            <AlertTriangle size={24} color="var(--color-red)" className="pulse-active-red" />
+            <div style={{ flex: 1 }}>
+              <strong style={{ color: 'var(--color-red)', fontSize: '0.95rem' }}>
+                {latestMetrics.relayTripped ? 'EMERGENCY TRIP IN PROGRESS' : 'PARAMETER VIOLATION DETECTED'}
+              </strong>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {latestMetrics.relayTripped 
+                  ? `Node "${deviceData?.name || selectedDeviceId}" is isolated. Relay is OPEN due to ${latestMetrics.fault || 'an anomaly'}. Check load immediately.`
+                  : `Node "${deviceData?.name || selectedDeviceId}" is experiencing active parameter violations: ${activeAlarms.map(a => a.type).join(', ')}.`}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* TOP STATUS BAR & DEVICE SELECTION */}
         <section style={topBarContainerStyle} className="dashboard-top-bar">
           <div style={selectorGroupStyle} className="glass-panel selector-group">
@@ -750,4 +770,17 @@ const ackButtonStyle = {
   fontWeight: '600',
   cursor: 'pointer',
   transition: 'all var(--transition-fast)',
+};
+
+const alertBannerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '16px',
+  padding: '16px 20px',
+  borderRadius: 'var(--radius-md)',
+  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  border: '1px solid rgba(239, 68, 68, 0.3)',
+  width: '100%',
+  animation: 'pulse 2s infinite',
+  boxShadow: '0 0 15px rgba(239, 68, 68, 0.1)',
 };

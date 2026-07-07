@@ -112,29 +112,44 @@ unsigned long NetworkManager::getEpochTime() {
     return (unsigned long)now;
 }
 
-bool NetworkManager::sendTelemetry(const ElectricalMetrics& m, FaultType fault, bool relayTripped,
+ThresholdConfigs NetworkManager::sendTelemetry(const ElectricalMetrics& m, FaultType fault, bool relayTripped,
                                    const char* deviceId, const char* deviceName, const char* location) {
+    ThresholdConfigs result = { false, 0, 0, 0, 0, 0 };
+    
     handleConnection();
     
     unsigned long timestamp = getEpochTime();
     
     if (!_wifiConnected) {
         pushToBuffer(m, fault, relayTripped, deviceId, deviceName, location);
-        return false;
+        return result;
     }
     
     String payload = serializeMetrics(m, fault, relayTripped, timestamp, deviceId, deviceName, location);
-    bool success = uploadPayload(payload);
+    String responseBody = "";
+    bool success = uploadPayload(payload, responseBody);
     
     if (success) {
         if (_bufferCount > 0) {
             flushBuffer();
         }
+        // Parse the thresholds from the server response JSON
+        // Expected JSON: {"thresholds":{"minVoltage":180.0,"maxVoltage":255.0,...}}
+        if (responseBody.indexOf("thresholds") > -1) {
+            result.valid      = true;
+            result.minVoltage = parseJsonFloat(responseBody, "minVoltage");
+            result.maxVoltage = parseJsonFloat(responseBody, "maxVoltage");
+            result.maxCurrent = parseJsonFloat(responseBody, "maxCurrent");
+            result.maxPower   = parseJsonFloat(responseBody, "maxPower");
+            result.minPF      = parseJsonFloat(responseBody, "minPF");
+            Serial.printf("[Network] Threshold sync received: V(%.1f-%.1fV) I(%.1fA) P(%.0fW) PF(%.2f)\n",
+                          result.minVoltage, result.maxVoltage, result.maxCurrent, result.maxPower, result.minPF);
+        }
     } else {
         pushToBuffer(m, fault, relayTripped, deviceId, deviceName, location);
     }
     
-    return success;
+    return result;
 }
 
 void NetworkManager::pushToBuffer(const ElectricalMetrics& m, FaultType fault, bool relayTripped,
@@ -187,13 +202,14 @@ void NetworkManager::flushBuffer() {
     Serial.printf("[Buffer] Uploading queued offline telemetry data (%d records)...\n", _bufferCount);
     
     BufferedReading reading;
+    String discard = "";
     while (_bufferCount > 0) {
         reading = _buffer[_bufferTail];
         
         String payload = serializeMetrics(reading.metrics, reading.fault, reading.relayTripped, 
                                           reading.epochTime, reading.deviceId, reading.deviceName, reading.location);
         
-        if (uploadPayload(payload)) {
+        if (uploadPayload(payload, discard)) {
             _bufferTail = (_bufferTail + 1) % RING_BUFFER_SIZE;
             _bufferCount--;
             delay(100);
@@ -206,10 +222,11 @@ void NetworkManager::flushBuffer() {
     Serial.printf("[Buffer] Flush finished. Current queue size: %d\n", _bufferCount);
 }
 
-bool NetworkManager::uploadPayload(const String& jsonPayload) {
+bool NetworkManager::uploadPayload(const String& jsonPayload, String& responseBody) {
     HTTPClient http;
     bool success = false;
     String urlStr = String(_apiUrl);
+    responseBody = "";
     
     // Use secure client for HTTPS (Vercel) endpoints
     if (urlStr.startsWith("https://")) {
@@ -221,12 +238,12 @@ bool NetworkManager::uploadPayload(const String& jsonPayload) {
         
         int httpResponseCode = http.POST(jsonPayload);
         if (httpResponseCode > 0) {
-            String response = http.getString();
+            responseBody = http.getString();
             if (httpResponseCode == 200 || httpResponseCode == 201) {
                 success = true;
             } else {
                 Serial.printf("[HTTP] Warning: POST responded with code %d. Response: %s\n", 
-                              httpResponseCode, response.c_str());
+                              httpResponseCode, responseBody.c_str());
             }
         } else {
             Serial.printf("[HTTP] Error: POST request failed. Reason: %s\n", 
@@ -241,12 +258,12 @@ bool NetworkManager::uploadPayload(const String& jsonPayload) {
         
         int httpResponseCode = http.POST(jsonPayload);
         if (httpResponseCode > 0) {
-            String response = http.getString();
+            responseBody = http.getString();
             if (httpResponseCode == 200 || httpResponseCode == 201) {
                 success = true;
             } else {
                 Serial.printf("[HTTP] Warning: POST responded with code %d. Response: %s\n", 
-                              httpResponseCode, response.c_str());
+                              httpResponseCode, responseBody.c_str());
             }
         } else {
             Serial.printf("[HTTP] Error: POST request failed. Reason: %s\n", 
@@ -255,6 +272,16 @@ bool NetworkManager::uploadPayload(const String& jsonPayload) {
         http.end();
     }
     return success;
+}
+
+// Simple JSON float extractor — finds key and reads the numeric value after ':'
+float NetworkManager::parseJsonFloat(const String& json, const char* key) {
+    String searchKey = String("\"") + key + "\"";
+    int keyIdx = json.indexOf(searchKey);
+    if (keyIdx < 0) return 0.0f;
+    int colonIdx = json.indexOf(':', keyIdx + searchKey.length());
+    if (colonIdx < 0) return 0.0f;
+    return json.substring(colonIdx + 1).toFloat();
 }
 
 String NetworkManager::serializeMetrics(const ElectricalMetrics& m, FaultType fault, bool relayTripped, 

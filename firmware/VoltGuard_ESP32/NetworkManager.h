@@ -19,6 +19,17 @@ struct BufferedReading {
     unsigned long epochTime; // Unix timestamp
 };
 
+// Holds the thresholds returned by the server on each telemetry POST.
+// The ESP32 uses this to dynamically update protection limits from the UI.
+struct ThresholdConfigs {
+    bool valid;         // true if server returned a valid thresholds block
+    float minVoltage;
+    float maxVoltage;
+    float maxCurrent;
+    float maxPower;
+    float minPF;
+};
+
 class NetworkManager {
 public:
     NetworkManager(const char* ssid, const char* password, const char* apiUrl);
@@ -27,8 +38,8 @@ public:
     // Maintain connection state machine
     void handleConnection();
     
-    // Send telemetry to server, passing device identifiers dynamically
-    bool sendTelemetry(const ElectricalMetrics& m, FaultType fault, bool relayTripped, 
+    // Send telemetry to server. Returns ThresholdConfigs with any updated limits from the backend.
+    ThresholdConfigs sendTelemetry(const ElectricalMetrics& m, FaultType fault, bool relayTripped, 
                        const char* deviceId, const char* deviceName, const char* location);
     
     // Returns status indicators
@@ -59,7 +70,8 @@ private:
     bool popFromBuffer(BufferedReading& reading);
     void flushBuffer();
     
-    bool uploadPayload(const String& jsonPayload);
+    bool uploadPayload(const String& jsonPayload, String& responseBody);
+    float parseJsonFloat(const String& json, const char* key);
     String serializeMetrics(const ElectricalMetrics& m, FaultType fault, bool relayTripped, 
                             unsigned long timestamp, const char* deviceId, 
                             const char* deviceName, const char* location);

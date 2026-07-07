@@ -27,7 +27,7 @@ export default function DevicesPage() {
   const [editingDeviceId, setEditingDeviceId] = useState(null);
   const [editForm, setEditForm] = useState({
     name: '', location: '',
-    minVoltage: 195.0, maxVoltage: 253.0,
+    minVoltage: 180.0, maxVoltage: 255.0,
     maxCurrent: 15.0, maxPower: 3300,
     minPF: 0.80, maxEnergy: 10000,
   });
@@ -66,8 +66,8 @@ export default function DevicesPage() {
     setEditForm({
       name: device.name,
       location: device.location,
-      minVoltage: device.threshold?.minVoltage || 195.0,
-      maxVoltage: device.threshold?.maxVoltage || 253.0,
+      minVoltage: device.threshold?.minVoltage || 180.0,
+      maxVoltage: device.threshold?.maxVoltage || 255.0,
       maxCurrent: device.threshold?.maxCurrent || 15.0,
       maxPower: device.threshold?.maxPower || 3300,
       minPF: device.threshold?.minPF || 0.80,

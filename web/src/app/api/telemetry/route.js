@@ -54,8 +54,8 @@ export async function POST(request) {
       update: {},
       create: {
         deviceId,
-        minVoltage: 195.0,
-        maxVoltage: 253.0,
+        minVoltage: 180.0,
+        maxVoltage: 255.0,
         maxCurrent: 15.0,
         maxPower: 3300.0,
         minPF: 0.80,
@@ -211,6 +211,13 @@ export async function POST(request) {
       deviceId,
       status: deviceStatus,
       telemetryId: telemetry.id,
+      thresholds: {
+        minVoltage: threshold.minVoltage,
+        maxVoltage: threshold.maxVoltage,
+        maxCurrent: threshold.maxCurrent,
+        maxPower: threshold.maxPower,
+        minPF: threshold.minPF,
+      }
     }, { status: 201 });
   } catch (error) {
     console.error('[Telemetry Ingestion Error]', error);
