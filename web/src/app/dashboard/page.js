@@ -68,9 +68,17 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setDevices(data);
-        if (data.length > 0 && !selectedDeviceId) {
-          // Default to first device
-          setSelectedDeviceId(data[0].id);
+        if (data.length > 0) {
+          const storedId = localStorage.getItem('voltguard_selected_device_id');
+          const storedExists = data.some(d => d.id === storedId);
+          if (storedId && storedExists) {
+            if (selectedDeviceId !== storedId) {
+              setSelectedDeviceId(storedId);
+            }
+          } else if (!selectedDeviceId) {
+            // Default to first device
+            setSelectedDeviceId(data[0].id);
+          }
         }
       }
     } catch (err) {
@@ -113,18 +121,22 @@ export default function Dashboard() {
 
   // Polling loop
   useEffect(() => {
-    if (!user || !selectedDeviceId) return;
+    if (!user) return;
     
-    fetchDeviceMetrics(); // Initial fetch
+    fetchDevices(); // Initial fetch
+    if (selectedDeviceId) {
+      fetchDeviceMetrics();
+    }
     
     const interval = setInterval(() => {
-      if (isPolling) {
+      fetchDevices(); // Keep device list updated in case new nodes register
+      if (isPolling && selectedDeviceId) {
         fetchDeviceMetrics();
       }
     }, 1000); // 1-second polling frequency for rapid synchronization
     
     return () => clearInterval(interval);
-  }, [user, selectedDeviceId, isPolling, fetchDeviceMetrics]);
+  }, [user, selectedDeviceId, isPolling, fetchDeviceMetrics, fetchDevices]);
 
   // 4. Acknowledge alarm
   const handleAcknowledgeAlarm = async (alarmId) => {
@@ -231,7 +243,9 @@ export default function Dashboard() {
               value={selectedDeviceId}
               onChange={(e) => {
                 setLoading(true);
-                setSelectedDeviceId(e.target.value);
+                const val = e.target.value;
+                setSelectedDeviceId(val);
+                localStorage.setItem('voltguard_selected_device_id', val);
               }}
               style={selectStyle}
             >

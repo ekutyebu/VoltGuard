@@ -25,6 +25,17 @@ export default function AlarmsLogPage() {
   const [filterDevice, setFilterDevice] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
+  // Load stored filters on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedDevice = localStorage.getItem('voltguard_filter_device_id');
+      if (storedDevice) setFilterDevice(storedDevice);
+      
+      const storedStatus = localStorage.getItem('voltguard_filter_status');
+      if (storedStatus) setFilterStatus(storedStatus);
+    }
+  }, []);
+
   // 1. Session verification
   useEffect(() => {
     async function verifySession() {
@@ -177,7 +188,11 @@ export default function AlarmsLogPage() {
               <select
                 id="filter-device-select"
                 value={filterDevice}
-                onChange={(e) => setFilterDevice(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFilterDevice(val);
+                  localStorage.setItem('voltguard_filter_device_id', val);
+                }}
                 className="form-input"
                 style={{ padding: '8px 12px', fontSize: '0.85rem' }}
               >
@@ -192,7 +207,11 @@ export default function AlarmsLogPage() {
               <select
                 id="filter-status-select"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFilterStatus(val);
+                  localStorage.setItem('voltguard_filter_status', val);
+                }}
                 className="form-input"
                 style={{ padding: '8px 12px', fontSize: '0.85rem' }}
               >
@@ -205,7 +224,12 @@ export default function AlarmsLogPage() {
 
             <button
               id="clear-filters-btn"
-              onClick={() => { setFilterDevice(''); setFilterStatus(''); }}
+              onClick={() => { 
+                setFilterDevice(''); 
+                setFilterStatus(''); 
+                localStorage.removeItem('voltguard_filter_device_id');
+                localStorage.removeItem('voltguard_filter_status');
+              }}
               className="btn btn-outline"
               style={{ padding: '8px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
             >

@@ -311,6 +311,9 @@ void Task_Network(void* pvParameters) {
                     }
                 }
             }
+
+            // Delay to prevent back-to-back SSL post collisions/socket resource exhaustion
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
 
         // If no sensors are active, update status screen periodically
