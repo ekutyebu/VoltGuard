@@ -70,15 +70,15 @@ FaultType FaultDetector::checkMetrics(const ElectricalMetrics& m) {
         if (_faultCounter > 0) {
             _faultCounter--;
         }
+    }
         
-        // 4. Auto Recovery Logic
-        // If relay was tripped, and parameters are normal, and cooldown has expired
-        if (_relayTripped && _activeFault != FAULT_SHORT_CIRCUIT) {
-            unsigned long elapsed = millis() - _lastTripTime;
-            if (elapsed > RELAY_AUTORECOVERY_MS) {
-                Serial.println("[FaultDetector] Fault cleared. Cooldown completed. Auto-recovering relay...");
-                resetTrip();
-            }
+    // 4. Auto Recovery Logic
+    // If relay was tripped, and cooldown has expired, try to recover to test again
+    if (_relayTripped) {
+        unsigned long elapsed = millis() - _lastTripTime;
+        if (elapsed > RELAY_AUTORECOVERY_MS) {
+            Serial.printf("[FaultDetector] Cooldown of %d seconds completed. Auto-recovering relay to test again...\n", RELAY_AUTORECOVERY_MS / 1000);
+            resetTrip();
         }
     }
 

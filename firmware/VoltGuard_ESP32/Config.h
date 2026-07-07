@@ -79,6 +79,6 @@ static const int WIFI_NETWORK_COUNT = sizeof(WIFI_NETWORKS) / sizeof(WIFI_NETWOR
 #define THRESHOLD_MIN_PF      0.80f    // Power Factor
 
 // Automatic reconnection & recovery
-#define RELAY_AUTORECOVERY_MS 10000    // Wait 10 seconds after a trip to attempt auto-reset
+#define RELAY_AUTORECOVERY_MS 60000    // Wait 60 seconds after a trip to attempt auto-reset
 
 #endif // CONFIG_H
